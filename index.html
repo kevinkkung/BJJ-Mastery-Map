@@ -138,7 +138,7 @@ input.text-input{font-size:12px;padding:5px 8px;border:0.5px solid var(--border)
 .auth-btn:hover{background:var(--bg3)}
 .auth-btn.primary{background:var(--focus-fill);border-color:var(--focus-stroke);color:var(--focus-text)}
 .auth-btn.primary:hover{opacity:.9}
-#auth-msg{font-size:12px;text-align:center;min-height:16px}
+#auth-msg{font-size:12px;text-align:center;min-height:20px;padding:4px;border-radius:var(--radius);word-break:break-word}
 #auth-msg.err{color:#c0392b}
 #auth-msg.ok{color:var(--drill-text)}
 #user-bar{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text3)}
@@ -179,12 +179,8 @@ input.text-input{font-size:12px;padding:5px 8px;border:0.5px solid var(--border)
       <div id="sec-components" style="margin-bottom:0">
         <svg id="svg-components" width="100%" style="display:block"></svg>
       </div>
-      <div id="sec-gameplan" style="overflow-x:auto;margin-bottom:0">
-        <svg id="svg-gameplan" style="display:block;min-width:100%"></svg>
-      </div>
-      <div id="sec-classwork" style="overflow-x:auto">
-        <svg id="svg-classwork" style="display:block;min-width:100%"></svg>
-      </div>
+      <!-- User sections rendered dynamically into #sections-container -->
+      <div id="sections-container"></div>
     </div>
     <div id="journal-view" style="display:none">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -603,8 +599,7 @@ var GAME_COMPONENTS = [
 ══════════════════════════════════════════ */
 var appState = {
   schemaVersion: SCHEMA_VERSION,
-  gameplanNodes: [],   // {id, label, parentId, crossArrows:[id], tags:{principles:[],components:[]}, notes:[{ts,text}]}
-  classworkNodes: [],
+  sections: [],        // [{id, label, color, nodes:[]}] — dynamic user sections
   sessions: [],        // {id, date, notes, taggedNodes:[id]}
   principles: [],      // editable copy of PRINCIPLES (seeded on first load)
   components: [],      // editable copy of GAME_COMPONENTS (seeded on first load)
@@ -650,6 +645,20 @@ function seedDefaults(){
     appState.principles = JSON.parse(JSON.stringify(PRINCIPLES));
   if(!appState.components || appState.components.length===0)
     appState.components = JSON.parse(JSON.stringify(GAME_COMPONENTS));
+  if(!appState.sections || appState.sections.length===0){
+    // Migrate legacy format or seed defaults
+    if(appState.gameplanNodes||appState.classworkNodes){
+      appState.sections = [];
+      if(appState.gameplanNodes&&appState.gameplanNodes.length) appState.sections.push({id:'s-gp',label:'Your Gameplan',color:'#D85A30',nodes:appState.gameplanNodes});
+      if(appState.classworkNodes&&appState.classworkNodes.length) appState.sections.push({id:'s-cw',label:'Class Work',color:'#885AB7',nodes:appState.classworkNodes});
+      delete appState.gameplanNodes; delete appState.classworkNodes;
+    } else {
+      appState.sections = [
+        {id:'s-gp', label:'Your Gameplan', color:'#D85A30', nodes:[]},
+        {id:'s-cw', label:'Class Work',    color:'#885AB7', nodes:[]},
+      ];
+    }
+  }
 }
 
 async function persist(){
@@ -669,10 +678,10 @@ async function persist(){
 }
 function updateSaveIndicator(){
   const notes = appState.sessions.reduce((a,s)=>a+((s.notes||'').length>0?1:0),0);
-  const gp = appState.gameplanNodes.length;
-  const cw = appState.classworkNodes.length;
+  const totalNodes = (appState.sections||[]).reduce((a,s)=>a+(s.nodes||[]).length,0);
+  const secCount = (appState.sections||[]).length;
   document.getElementById('save-indicator').textContent =
-    `${appState.sessions.length} sessions · ${gp} gameplan nodes · ${cw} classwork nodes · auto-saved`;
+    `${appState.sessions.length} sessions · ${secCount} sections · ${totalNodes} nodes · auto-saved`;
 }
 
 /* ══════════════════════════════════════════
@@ -699,8 +708,13 @@ function importData(event){
       showModal('Import backup?',
         `<p style="font-size:12px;color:var(--text2);line-height:1.6">From ${data._meta.exportedAtReadable}.<br>This will merge your backup into the current state. Existing sessions and nodes are preserved.</p>`,
         [{label:'Cancel',action:closeModal},{label:'Import',action:()=>{
-          if(data.gameplanNodes) appState.gameplanNodes = data.gameplanNodes;
-          if(data.classworkNodes) appState.classworkNodes = data.classworkNodes;
+          if(data.sections) appState.sections = data.sections;
+          // Legacy migration: convert old gameplanNodes/classworkNodes
+          else {
+            appState.sections = [];
+            if(data.gameplanNodes&&data.gameplanNodes.length) appState.sections.push({id:'s-gp',label:'Your Gameplan',color:'#D85A30',nodes:data.gameplanNodes});
+            if(data.classworkNodes&&data.classworkNodes.length) appState.sections.push({id:'s-cw',label:'Class Work',color:'#885AB7',nodes:data.classworkNodes});
+          }
           if(data.sessions) appState.sessions = data.sessions;
           persist(); renderTree(); closeModal();
           alert('Import successful.');
@@ -734,7 +748,7 @@ function closeModal(){ document.getElementById('modal-overlay').classList.remove
 ══════════════════════════════════════════ */
 function uid(){ return 'n'+Date.now()+Math.random().toString(36).slice(2,6); }
 
-function getNodes(layer){ return layer==='gameplan'?appState.gameplanNodes:appState.classworkNodes; }
+function getNodes(sectionId){ const sec=(appState.sections||[]).find(s=>s.id===sectionId); return sec?sec.nodes:[]; }
 
 function sessionCountForNode(nodeId){
   return appState.sessions.filter(s=>(s.taggedNodes||[]).includes(nodeId)).length;
@@ -846,8 +860,7 @@ function wrapText(text, cx, cy, maxW, fontSize, fontWeight, fillStr){
 function renderTree(){
   renderPrinciples();
   renderComponents();
-  renderUserSection('gameplan');
-  renderUserSection('classwork');
+  renderAllSections();
 }
 
 /* ─── Shared SVG defs ─── */
@@ -936,23 +949,151 @@ function renderComponents(){
   svg.innerHTML = h;
 }
 
-/* ─── GAMEPLAN / CLASSWORK ─── */
-// Scale floor: 60% of BASE_W. Below that, overflow-x scroll kicks in.
+/* ─── USER SECTIONS ─── */
 var BASE_W = 900;
 var SCALE_FLOOR = 0.60;
 
-function renderUserSection(layer){
-  const isGP = layer==='gameplan';
-  const svgId = isGP?'svg-gameplan':'svg-classwork';
-  const secId = isGP?'sec-gameplan':'sec-classwork';
+// Helpers
+function getAllNodes(){ return (appState.sections||[]).flatMap(s=>s.nodes||[]); }
+function getSectionForNode(nodeId){ return (appState.sections||[]).find(s=>(s.nodes||[]).some(n=>n.id===nodeId)); }
+
+// Render all sections into #sections-container
+function renderAllSections(){
+  let container = document.getElementById('sections-container');
+  if(!container){
+    // Create container after components section
+    const compSec = document.getElementById('sec-components');
+    if(!compSec) return;
+    container = document.createElement('div');
+    container.id = 'sections-container';
+    compSec.parentNode.insertBefore(container, compSec.nextSibling);
+  }
+
+  const sections = appState.sections||[];
+
+  // Build HTML for all section wrappers
+  let html = '';
+  sections.forEach((sec,idx)=>{
+    html += `<div id="sec-wrap-${sec.id}" style="margin-bottom:0">
+      <div id="sec-header-${sec.id}" style="display:flex;align-items:center;gap:8px;padding:6px 16px;border-top:0.5px solid var(--border);background:var(--bg);flex-wrap:wrap">
+        <span style="font-size:11px;font-weight:500;color:${sec.color};letter-spacing:.06em;text-transform:uppercase;flex:1">${sec.label}</span>
+        <button class="action-btn" style="font-size:11px;padding:3px 7px" onclick="editSectionName('${sec.id}')" title="Rename">✎</button>
+        <input type="color" value="${sec.color}" title="Section color"
+          style="width:22px;height:22px;border:none;background:none;cursor:pointer;padding:0"
+          onchange="setSectionColor('${sec.id}',this.value)"/>
+        <button class="action-btn" style="font-size:11px;padding:3px 7px" ${idx===0?'disabled':''} onclick="moveSectionUp('${sec.id}')" title="Move section up">↑</button>
+        <button class="action-btn" style="font-size:11px;padding:3px 7px" ${idx===sections.length-1?'disabled':''} onclick="moveSectionDown('${sec.id}')" title="Move section down">↓</button>
+        <button class="action-btn danger" style="font-size:11px;padding:3px 7px" onclick="deleteSection('${sec.id}')" title="Delete section">✕</button>
+      </div>
+      <div id="sec-${sec.id}" style="overflow-x:auto">
+        <svg id="svg-${sec.id}" style="display:block;min-width:100%"></svg>
+      </div>
+    </div>`;
+  });
+  // Add section button
+  html += `<div style="padding:10px 16px;border-top:0.5px solid var(--border)">
+    <button class="action-btn" onclick="addSection()">+ Add section</button>
+  </div>`;
+
+  container.innerHTML = html;
+
+  // Now render each section's SVG
+  sections.forEach(sec => renderUserSection(sec));
+}
+
+// Section management
+function addSection(){
+  showModal('Add section',
+    `<div style="display:flex;flex-direction:column;gap:8px">
+      <div class="d-label" style="margin-bottom:2px">Section name</div>
+      <input class="text-input" id="modal-sec-label" placeholder="e.g. Competition Prep" autofocus/>
+      <div class="d-label" style="margin-bottom:2px">Color</div>
+      <input type="color" id="modal-sec-color" value="#1D9E75" style="width:48px;height:32px;border:none;cursor:pointer"/>
+    </div>`,
+    [{label:'Cancel',action:closeModal},{label:'Add',action:()=>{
+      const label=document.getElementById('modal-sec-label')?.value?.trim();
+      if(!label) return;
+      const color=document.getElementById('modal-sec-color')?.value||'#1D9E75';
+      const sec={id:uid(), label, color, nodes:[]};
+      if(!appState.sections) appState.sections=[];
+      appState.sections.push(sec);
+      persist(); renderAllSections(); closeModal();
+    }}]
+  );
+  setTimeout(()=>document.getElementById('modal-sec-label')?.focus(),80);
+}
+
+function editSectionName(secId){
+  const sec=(appState.sections||[]).find(s=>s.id===secId); if(!sec) return;
+  showModal('Rename section',
+    `<div style="display:flex;flex-direction:column;gap:8px">
+      <div class="d-label" style="margin-bottom:2px">Section name</div>
+      <input class="text-input" id="modal-sec-label" value="${sec.label}" autofocus/>
+    </div>`,
+    [{label:'Cancel',action:closeModal},{label:'Save',action:()=>{
+      const label=document.getElementById('modal-sec-label')?.value?.trim();
+      if(!label) return;
+      sec.label=label;
+      persist(); renderAllSections(); closeModal();
+    }}]
+  );
+  setTimeout(()=>document.getElementById('modal-sec-label')?.focus(),80);
+}
+
+function setSectionColor(secId, color){
+  const sec=(appState.sections||[]).find(s=>s.id===secId); if(!sec) return;
+  sec.color=color;
+  persist(); renderAllSections();
+}
+
+function moveSectionUp(secId){
+  const secs=appState.sections||[];
+  const idx=secs.findIndex(s=>s.id===secId);
+  if(idx<=0) return;
+  [secs[idx-1],secs[idx]]=[secs[idx],secs[idx-1]];
+  persist(); renderAllSections();
+}
+
+function moveSectionDown(secId){
+  const secs=appState.sections||[];
+  const idx=secs.findIndex(s=>s.id===secId);
+  if(idx<0||idx>=secs.length-1) return;
+  [secs[idx],secs[idx+1]]=[secs[idx+1],secs[idx]];
+  persist(); renderAllSections();
+}
+
+function deleteSection(secId){
+  const sec=(appState.sections||[]).find(s=>s.id===secId); if(!sec) return;
+  const nodeCount=(sec.nodes||[]).length;
+  showModal(`Delete "${sec.label}"?`,
+    `<p style="font-size:12px;color:var(--text2);line-height:1.6">This will permanently delete the section and all ${nodeCount} node${nodeCount!==1?'s':''} inside it. This cannot be undone.</p>`,
+    [{label:'Cancel',action:closeModal},{label:'Delete',action:()=>{
+      appState.sections=(appState.sections||[]).filter(s=>s.id!==secId);
+      // Clean up sessions that referenced nodes in this section
+      const nodeIds=new Set((sec.nodes||[]).map(n=>n.id));
+      appState.sessions.forEach(s=>{ s.taggedNodes=(s.taggedNodes||[]).filter(id=>!nodeIds.has(id)); });
+      persist(); renderAllSections(); closePanel(); closeModal();
+    }}]
+  );
+}
+
+function renderUserSection(secObj){
+  // Accept either a section object or a section id string
+  if(typeof secObj==='string') secObj=(appState.sections||[]).find(s=>s.id===secObj)||{id:secObj,label:secObj,color:'#885AB7',nodes:[]};
+  const layer = secObj.id;
+  const strokeColor = secObj.color;
+  // Darken the color for text/stroke
+  const strokeDark = strokeColor;
+  // Very light fill: color at ~10% opacity approximated
+  const fillColor = strokeColor+'18';
+
+  const svgId = `svg-${layer}`;
+  const secId = `sec-${layer}`;
   const svg = document.getElementById(svgId); if(!svg) return;
   const sec = document.getElementById(secId); if(!sec) return;
-  const nodes = isGP?appState.gameplanNodes:appState.classworkNodes;
-  const strokeColor = isGP?'#D85A30':'#885AB7';
-  const strokeDark  = isGP?'#993C1D':'#5C3A8A';
-  const fillColor   = isGP?'#FAECE7':'#F3EDFB';
-  const markerUrl   = ''; // unused - arrowheads drawn inline
-  const sectionLabel = isGP?'YOUR GAMEPLAN':'CLASS WORK';
+  const nodes = secObj.nodes||[];
+  const markerUrl = '';
+  const sectionLabel = secObj.label.toUpperCase();
 
   const MARGIN=30, LABEL_H=48, PAD_BOTTOM=50;
   const crossArrowCount = nodes.reduce((sum,n)=>sum+(n.crossArrows||[]).length,0);
@@ -1416,8 +1557,9 @@ function clickUserNode(layer, id){
   renderTree();
   openPanel();
   document.getElementById('d-title').textContent=node.label||'Unnamed node';
-  const isGP=layer==='gameplan';
-  setBadge(isGP?'Gameplan':'Class Work', isGP?'#FAECE7':'#F3EDFB', isGP?'#993C1D':'#5C3A8A', isGP?'#D85A30':'#885AB7');
+  const _sec=appState.sections.find(s=>s.id===layer)||{label:'Section',color:'#885AB7'};
+  const _fc=_sec.color+'22'; const _tc=_sec.color;
+  setBadge(_sec.label, _fc, _tc, _tc);
   // Hide principle/component blocks
   hide('blk-pc-actions'); hide('blk-read-view'); hide('blk-edit-view');
   hide('blk-desc'); hide('blk-sub'); hide('blk-concepts'); hide('blk-mistakes');
@@ -1447,7 +1589,7 @@ function clickUserNode(layer, id){
   renderNodeNotes(node);
 
   // Cross-arrow management
-  const _allOtherNodes=[...appState.gameplanNodes,...appState.classworkNodes].filter(n=>n.id!==id);
+  const _allOtherNodes=getAllNodes().filter(n=>n.id!==id);
   show('blk-add-conn');
   renderCrossArrowList(node);
   if(!_allOtherNodes.length) hide('blk-add-conn');
@@ -1565,15 +1707,15 @@ function deleteNode(){
       const toDelete=new Set(collectDescendants(selected.id));
       const remaining=nodes.filter(n=>!toDelete.has(n.id));
       remaining.forEach(n=>{ n.crossArrows=(n.crossArrows||[]).filter(id=>!toDelete.has(id)); });
-      if(layer==='gameplan') appState.gameplanNodes=remaining;
-      else appState.classworkNodes=remaining;
+      const sec=(appState.sections||[]).find(s=>s.id===layer);
+      if(sec) sec.nodes=remaining;
       selected=null; closePanel(); persist(); renderTree(); closeModal();
     }}]
   );
 }
 
 function renderCrossArrowList(node){
-  const allOther=[...appState.gameplanNodes,...appState.classworkNodes].filter(n=>n.id!==node.id);
+  const allOther=getAllNodes().filter(n=>n.id!==node.id);
   const arrows=node.crossArrows||[];
 
   // Existing arrows list
@@ -1582,7 +1724,7 @@ function renderCrossArrowList(node){
     list.innerHTML='<div style="font-size:12px;color:var(--text3);margin-bottom:4px">No cross-references yet.</div>';
   } else {
     list.innerHTML=arrows.map(targetId=>{
-      const target=[...appState.gameplanNodes,...appState.classworkNodes].find(n=>n.id===targetId);
+      const target=getAllNodes().find(n=>n.id===targetId);
       const label=target?target.label:'Unknown node';
       return `<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);margin-bottom:4px;font-size:12px">
         <span style="color:var(--text2)">→ ${escHtml(label)}</span>
@@ -1598,7 +1740,7 @@ function renderCrossArrowList(node){
     sel.innerHTML='<option disabled>All nodes already connected</option>';
   } else {
     sel.innerHTML=available.map(n=>{
-      const layer=appState.gameplanNodes.find(x=>x.id===n.id)?'Gameplan':'Classwork';
+      const sec2=getSectionForNode(n.id); const layer=sec2?sec2.label:'Unknown';
       return `<option value="${n.id}">${escHtml(n.label||'Unnamed')} (${layer})</option>`;
     }).join('');
   }
@@ -1725,18 +1867,18 @@ function deleteNote(nodeId, idx){
 }
 
 function findNodeById(id){
-  return [...appState.gameplanNodes,...appState.classworkNodes].find(n=>n.id===id);
+  return getAllNodes().find(n=>n.id===id);
 }
 
 /* ══════════════════════════════════════════
    SESSIONS / JOURNAL
 ══════════════════════════════════════════ */
 function openNewSessionModal(){
-  const allNodes=[...appState.gameplanNodes,...appState.classworkNodes];
+  const allNodes=getAllNodes();
   const dateStr=new Date().toISOString().slice(0,10);
   const tagsHtml=allNodes.length
     ?'<div class="tag-grid" id="modal-node-tags">'+
-      allNodes.map(n=>`<span class="tag-opt plain-tag" onclick="this.classList.toggle('selected')" data-id="${n.id}">${n.label||'Unnamed'} (${appState.gameplanNodes.find(x=>x.id===n.id)?'GP':'CW'})</span>`).join('')+
+      allNodes.map(n=>{const s4=getSectionForNode(n.id); return `<span class="tag-opt plain-tag" onclick="this.classList.toggle('selected')" data-id="${n.id}">${n.label||'Unnamed'} (${s4?s4.label.slice(0,8):'?'})</span>`;}).join('')+
       '</div>'
     :'<p style="font-size:12px;color:var(--text3)">Add some gameplan or classwork nodes first to tag them.</p>';
   showModal('Log session',
@@ -1774,7 +1916,7 @@ function renderJournal(){
     c.innerHTML='<div style="font-size:13px;color:var(--text3)">No sessions logged yet. Hit "Log session" to add one.</div>';
     return;
   }
-  const allNodes=[...appState.gameplanNodes,...appState.classworkNodes];
+  const allNodes=getAllNodes();
   const byDay={};
   appState.sessions.forEach(s=>{
     if(!byDay[s.date]) byDay[s.date]=[];
@@ -1791,14 +1933,14 @@ function renderJournal(){
 }
 
 function renderSessionCard(s,allNodes){
-  if(!allNodes) allNodes=[...appState.gameplanNodes,...appState.classworkNodes];
+  if(!allNodes) allNodes=getAllNodes();
   const tags=s.taggedNodes.map(id=>{
     const n=allNodes.find(x=>x.id===id);
     return n?`<span class="session-tag">${escHtml(n.label||'?')}</span>`:'';
   }).join('');
   const nodeTagOpts=allNodes.map(n=>{
     const sel=s.taggedNodes.includes(n.id);
-    const layer=appState.gameplanNodes.find(x=>x.id===n.id)?'GP':'CW';
+    const sec3=getSectionForNode(n.id); const layer=sec3?sec3.label.slice(0,6):'?';
     return `<span class="tag-opt plain-tag${sel?' selected':''}" data-id="${n.id}" onclick="this.classList.toggle('selected')">${escHtml(n.label||'Unnamed')} (${layer})</span>`;
   }).join('');
   return `<div class="session-card" id="sc-${s.id}">
@@ -2036,12 +2178,12 @@ function deletePrincipleOrComponent(){
         // Remove from component principle tags
         appState.components.forEach(c=>{ c.principles=(c.principles||[]).filter(p=>p!==id); });
         // Remove from gameplan/classwork node tags
-        [...appState.gameplanNodes,...appState.classworkNodes].forEach(n=>{
+        getAllNodes().forEach(n=>{
           if(n.tags) n.tags.principles=(n.tags.principles||[]).filter(p=>p!==id);
         });
       } else {
         appState.components = appState.components.filter(x=>x.id!==id);
-        [...appState.gameplanNodes,...appState.classworkNodes].forEach(n=>{
+        getAllNodes().forEach(n=>{
           if(n.tags) n.tags.components=(n.tags.components||[]).filter(c=>c!==id);
         });
       }
@@ -2118,13 +2260,23 @@ async function authSignIn(){
   const email = document.getElementById('auth-email').value.trim();
   const password = document.getElementById('auth-password').value;
   if(!email||!password){ setAuthMsg('Please enter email and password.', true); return; }
-  setAuthMsg('Signing in…');
+  const btn = document.querySelector('.auth-btn.primary');
+  if(btn){ btn.textContent='Signing in…'; btn.disabled=true; }
+  setAuthMsg('Connecting to server…');
   try{
     const {data, error} = await sb.auth.signInWithPassword({email, password});
-    if(error){ setAuthMsg(error.message, true); }
-    else if(!data.session){ setAuthMsg('Sign in failed — please try again.', true); }
+    if(error){
+      console.error('Sign in error:', JSON.stringify(error));
+      setAuthMsg(error.message || JSON.stringify(error), true);
+    } else if(!data || !data.user){
+      setAuthMsg('No user returned — check your credentials.', true);
+    }
+    // Success: onAuthStateChange fires and hides auth screen
   }catch(e){
-    setAuthMsg('Connection error: ' + e.message, true);
+    console.error('Sign in exception:', e);
+    setAuthMsg('Error: ' + (e.message||String(e)), true);
+  } finally {
+    if(btn){ btn.textContent='Sign in'; btn.disabled=false; }
   }
 }
 
@@ -2150,7 +2302,7 @@ async function authResetPassword(){
 
 async function authSignOut(){
   await sb.auth.signOut();
-  appState = {schemaVersion:SCHEMA_VERSION, gameplanNodes:[], classworkNodes:[], sessions:[], principles:[], components:[]};
+  appState = {schemaVersion:SCHEMA_VERSION, sections:[{id:'s-gp',label:'Your Gameplan',color:'#D85A30',nodes:[]},{id:'s-cw',label:'Class Work',color:'#885AB7',nodes:[]}], sessions:[], principles:[], components:[]};
   try{ localStorage.removeItem(LS_KEY); }catch(e){}
   document.getElementById('user-email-display').textContent = '';
   document.getElementById('auth-screen').style.display = 'flex';
@@ -2173,13 +2325,13 @@ async function init(){
       document.getElementById('auth-screen').style.display = 'none';
       document.getElementById('user-email-display').textContent = session.user.email;
       // Reset appState before loading so we don't merge stale data
-      appState = {schemaVersion:SCHEMA_VERSION, gameplanNodes:[], classworkNodes:[], sessions:[], principles:[], components:[]};
+      appState = {schemaVersion:SCHEMA_VERSION, sections:[{id:'s-gp',label:'Your Gameplan',color:'#D85A30',nodes:[]},{id:'s-cw',label:'Class Work',color:'#885AB7',nodes:[]}], sessions:[], principles:[], components:[]};
       await loadState();
       renderTree();
     } else {
       document.getElementById('auth-screen').style.display = 'flex';
       // Reset to empty state
-      appState = {schemaVersion:SCHEMA_VERSION, gameplanNodes:[], classworkNodes:[], sessions:[], principles:[], components:[]};
+      appState = {schemaVersion:SCHEMA_VERSION, sections:[{id:'s-gp',label:'Your Gameplan',color:'#D85A30',nodes:[]},{id:'s-cw',label:'Class Work',color:'#885AB7',nodes:[]}], sessions:[], principles:[], components:[]};
       seedDefaults();
       renderTree();
     }
