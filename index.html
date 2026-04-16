@@ -979,7 +979,7 @@ function renderAllSections(){
         <span style="font-size:11px;font-weight:500;color:${sec.color};letter-spacing:.06em;text-transform:uppercase;flex:1">${sec.label}</span>
         <button class="action-btn" style="font-size:11px;padding:3px 7px" onclick="editSectionName('${sec.id}')" title="Rename">✎</button>
         <input type="color" value="${sec.color}" title="Section color"
-          style="width:22px;height:22px;border:none;background:none;cursor:pointer;padding:0"
+          style="width:22px;height:22px;border:0.5px solid var(--border2);border-radius:4px;cursor:pointer;padding:0;background:${sec.color}"
           onchange="setSectionColor('${sec.id}',this.value)"/>
         <button class="action-btn" style="font-size:11px;padding:3px 7px" ${idx===0?'disabled':''} onclick="moveSectionUp('${sec.id}')" title="Move section up">↑</button>
         <button class="action-btn" style="font-size:11px;padding:3px 7px" ${idx===sections.length-1?'disabled':''} onclick="moveSectionDown('${sec.id}')" title="Move section down">↓</button>
@@ -1003,17 +1003,39 @@ function renderAllSections(){
 
 // Section management
 function addSection(){
+  const PALETTE = [
+    {color:'#D85A30',label:'Coral'},
+    {color:'#885AB7',label:'Purple'},
+    {color:'#185FA5',label:'Blue'},
+    {color:'#0F6E56',label:'Teal'},
+    {color:'#854F0B',label:'Amber'},
+    {color:'#1D9E75',label:'Green'},
+    {color:'#534AB7',label:'Indigo'},
+    {color:'#C0392B',label:'Red'},
+    {color:'#1A5276',label:'Navy'},
+    {color:'#6C3483',label:'Violet'},
+  ];
+  const swatches = PALETTE.map((p,i)=>
+    `<span data-color="${p.color}" onclick="document.querySelectorAll('.color-swatch').forEach(s=>s.style.outline='none');this.style.outline='2px solid var(--text)';document.getElementById('modal-sec-color').value='${p.color}'"
+      class="color-swatch"
+      style="display:inline-block;width:22px;height:22px;border-radius:4px;background:${p.color};cursor:pointer;margin:2px;outline:${i===0?'2px solid var(--text)':'none'}" title="${p.label}"></span>`
+  ).join('');
   showModal('Add section',
-    `<div style="display:flex;flex-direction:column;gap:8px">
-      <div class="d-label" style="margin-bottom:2px">Section name</div>
-      <input class="text-input" id="modal-sec-label" placeholder="e.g. Competition Prep" autofocus/>
-      <div class="d-label" style="margin-bottom:2px">Color</div>
-      <input type="color" id="modal-sec-color" value="#1D9E75" style="width:48px;height:32px;border:none;cursor:pointer"/>
+    `<div style="display:flex;flex-direction:column;gap:10px">
+      <div>
+        <div class="d-label" style="margin-bottom:4px">Section name</div>
+        <input class="text-input" id="modal-sec-label" placeholder="e.g. Competition Prep" autofocus/>
+      </div>
+      <div>
+        <div class="d-label" style="margin-bottom:6px">Color</div>
+        <div>${swatches}</div>
+        <input type="hidden" id="modal-sec-color" value="${PALETTE[0].color}"/>
+      </div>
     </div>`,
     [{label:'Cancel',action:closeModal},{label:'Add',action:()=>{
       const label=document.getElementById('modal-sec-label')?.value?.trim();
       if(!label) return;
-      const color=document.getElementById('modal-sec-color')?.value||'#1D9E75';
+      const color=document.getElementById('modal-sec-color')?.value||PALETTE[0].color;
       const sec={id:uid(), label, color, nodes:[]};
       if(!appState.sections) appState.sections=[];
       appState.sections.push(sec);
@@ -1082,10 +1104,23 @@ function renderUserSection(secObj){
   if(typeof secObj==='string') secObj=(appState.sections||[]).find(s=>s.id===secObj)||{id:secObj,label:secObj,color:'#885AB7',nodes:[]};
   const layer = secObj.id;
   const strokeColor = secObj.color;
-  // Darken the color for text/stroke
-  const strokeDark = strokeColor;
-  // Very light fill: color at ~10% opacity approximated
-  const fillColor = strokeColor+'18';
+  // Map common colors to proper fill/text pairs (matching principles/components style)
+  // For unknown colors, derive a readable light fill
+  const COLOR_MAP = {
+    '#D85A30': {fill:'#FAECE7', text:'#993C1D'}, // coral (original gameplan)
+    '#885AB7': {fill:'#F3EDFB', text:'#5C3A8A'}, // purple (original classwork)
+    '#185FA5': {fill:'#E6F1FB', text:'#0C447C'}, // blue
+    '#0F6E56': {fill:'#E1F5EE', text:'#085041'}, // teal/green
+    '#854F0B': {fill:'#FAEEDA', text:'#633806'}, // amber
+    '#1D9E75': {fill:'#E1F5EE', text:'#085041'}, // green
+    '#534AB7': {fill:'#EEEDFE', text:'#3C3489'}, // indigo
+    '#C0392B': {fill:'#FDEDEC', text:'#922B21'}, // red
+    '#1A5276': {fill:'#EBF5FB', text:'#1A5276'}, // navy
+    '#6C3483': {fill:'#F5EEF8', text:'#4A235A'}, // violet
+  };
+  const colorPair = COLOR_MAP[strokeColor] || {fill: strokeColor+'22', text: strokeColor};
+  const strokeDark = colorPair.text;
+  const fillColor  = colorPair.fill;
 
   const svgId = `svg-${layer}`;
   const secId = `sec-${layer}`;
