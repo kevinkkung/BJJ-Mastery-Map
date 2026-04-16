@@ -19,7 +19,2056 @@
   --master-fill:#FAEEDA;--master-stroke:#854F0B;--master-text:#633806;
   --dim:0.22;
 }
+@media(prefers-color-scheme:dark){<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BJJ Mastery Tree</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#ffffff;--bg2:#f5f4f0;--bg3:#eceae4;
+  --border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.22);
+  --text:#1a1a18;--text2:#5a5a56;--text3:#9a9994;
+  --radius:8px;--radius-lg:12px;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --p-fill:#EEEDFE;--p-stroke:#534AB7;--p-text:#3C3489;
+  --gc-fill:#E1F5EE;--gc-stroke:#0F6E56;--gc-text:#085041;
+  --focus-fill:#E6F1FB;--focus-stroke:#185FA5;--focus-text:#0C447C;
+  --drill-fill:#E1F5EE;--drill-stroke:#0F6E56;--drill-text:#085041;
+  --master-fill:#FAEEDA;--master-stroke:#854F0B;--master-text:#633806;
+  --dim:0.22;
+}
 @media(prefers-color-scheme:dark){
+  :root{
+    --bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;
+    --border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.2);
+    --text:#e8e6df;--text2:#a8a69f;--text3:#6a6860;
+    --p-fill:#26215C;--p-stroke:#7F77DD;--p-text:#CECBF6;
+    --gc-fill:#085041;--gc-stroke:#1D9E75;--gc-text:#9FE1CB;
+    --focus-fill:#0C447C;--focus-stroke:#378ADD;--focus-text:#B5D4F4;
+    --drill-fill:#085041;--drill-stroke:#1D9E75;--drill-text:#9FE1CB;
+    --master-fill:#633806;--master-stroke:#EF9F27;--master-text:#FAC775;
+  }
+}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px}
+body{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+
+/* toolbar */
+#toolbar{display:flex;align-items:center;gap:6px;padding:8px 14px;border-bottom:0.5px solid var(--border);flex-wrap:wrap;flex-shrink:0;background:var(--bg)}
+#toolbar h1{font-size:15px;font-weight:500;flex:1;min-width:100px}
+.tb-btn{font-size:12px;padding:5px 10px;border:0.5px solid var(--border2);border-radius:var(--radius);background:transparent;color:var(--text2);cursor:pointer;white-space:nowrap;font-family:var(--font)}
+.tb-btn:hover{background:var(--bg2)}
+.tb-btn.active{background:var(--bg2);color:var(--text);border-color:var(--border2)}
+
+/* main */
+#main{display:flex;flex:1;overflow:hidden}
+#map-panel{flex:1;overflow:auto;padding:16px;position:relative;min-width:0}
+#right-panel{width:clamp(260px, 28vw, 380px);border-left:0.5px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:width .15s;flex-shrink:0}
+#right-panel.hidden{width:0;border:none}
+#right-inner{padding:14px;overflow-y:auto;flex:1;min-width:0;display:flex;flex-direction:column;gap:10px}
+
+/* detail panel */
+#right-inner h2{font-size:14px;font-weight:500;line-height:1.3}
+.d-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-top:2px}
+.d-body{font-size:12px;color:var(--text2);line-height:1.7}
+.d-body ul{padding-left:15px}
+.d-body li{margin-bottom:6px}
+.d-body li b{color:var(--text);font-weight:500}
+.fix-note{color:var(--text3);font-style:italic;display:block;margin-top:2px}
+.badge{font-size:10px;padding:2px 8px;border-radius:var(--radius);display:inline-block;border:0.5px solid transparent}
+.tag-chip{font-size:11px;padding:3px 7px;border-radius:var(--radius);display:inline-block;margin:2px 2px 0 0;cursor:pointer;border:0.5px solid var(--border2);background:var(--bg2);color:var(--text2)}
+.tag-chip:hover{border-color:var(--border2);color:var(--text)}
+.tag-chip.p-chip{background:var(--p-fill);border-color:var(--p-stroke);color:var(--p-text)}
+.tag-chip.gc-chip{background:var(--gc-fill);border-color:var(--gc-stroke);color:var(--gc-text)}
+.tag-chip.sel{opacity:1!important}
+textarea.note-box{width:100%;resize:vertical;min-height:54px;font-size:12px;border:0.5px solid var(--border);border-radius:var(--radius);padding:8px;background:var(--bg2);color:var(--text);font-family:var(--font);line-height:1.5}
+.action-btn{font-size:12px;padding:5px 10px;border:0.5px solid var(--border2);border-radius:var(--radius);cursor:pointer;background:transparent;color:var(--text);font-family:var(--font)}
+.action-btn:hover{background:var(--bg2)}
+.action-btn.full{width:100%}
+.action-btn.danger{color:#c0392b;border-color:#c0392b}
+.action-btn.danger:hover{background:#fff0ee}
+.ask-row{display:flex;gap:6px}
+.ask-input{flex:1;font-size:12px;padding:5px 8px;border:0.5px solid var(--border);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-family:var(--font)}
+.jentry{font-size:11px;padding:6px 8px;border-radius:var(--radius);background:var(--bg2);border:0.5px solid var(--border);margin-bottom:4px}
+.jentry .jts{color:var(--text3);font-size:10px;margin-bottom:2px}
+select.sel-input{font-size:12px;padding:4px 8px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);cursor:pointer;font-family:var(--font);width:100%}
+input.text-input{font-size:12px;padding:5px 8px;border:0.5px solid var(--border);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-family:var(--font);width:100%}
+
+/* responsive — narrow screens stack vertically */
+@media(max-width:680px){
+  #main{flex-direction:column}
+  #right-panel{width:100%!important;border-left:none;border-top:0.5px solid var(--border);max-height:55vh}
+  #right-panel.hidden{max-height:0;border:none}
+  #right-inner{min-width:0}
+}
+
+/* legend */
+#legend{display:flex;gap:12px;padding:7px 14px;flex-wrap:wrap;border-top:0.5px solid var(--border);flex-shrink:0;background:var(--bg)}
+.leg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
+.leg-dot{width:10px;height:10px;border-radius:2px}
+
+/* databar */
+#databar{display:flex;align-items:center;gap:8px;padding:5px 14px;border-top:0.5px solid var(--border);font-size:11px;color:var(--text3);background:var(--bg);flex-shrink:0;flex-wrap:wrap}
+#databar span{margin-right:auto}
+
+/* toast */
+#toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(12px);background:var(--text);color:var(--bg);font-size:12px;padding:7px 16px;border-radius:20px;pointer-events:none;opacity:0;transition:opacity .2s,transform .2s;z-index:300;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* SVG */
+.node-g{cursor:pointer}
+.node-g rect,.node-g circle{transition:opacity .15s}
+.dimmed rect,.dimmed circle,.dimmed text{opacity:var(--dim)!important}
+.dimmed.node-g{pointer-events:none}
+.lit rect{filter:drop-shadow(0 0 4px currentColor)}
+
+/* modal */
+#modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:200;align-items:center;justify-content:center}
+#modal-overlay.open{display:flex}
+#modal-box{background:var(--bg);border-radius:var(--radius-lg);border:0.5px solid var(--border2);padding:20px;max-width:440px;width:92%;max-height:80vh;overflow-y:auto}
+#modal-box h3{font-size:14px;font-weight:500;margin-bottom:10px}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+#import-file{display:none}
+
+/* tag selector in modal */
+.tag-grid{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.tag-opt{font-size:11px;padding:3px 8px;border-radius:var(--radius);border:0.5px solid var(--border2);cursor:pointer;background:var(--bg2);color:var(--text2);user-select:none}
+.tag-opt:hover{border-color:var(--border2);color:var(--text)}
+.tag-opt.selected.p-tag{background:var(--p-fill);border-color:var(--p-stroke);color:var(--p-text)}
+.tag-opt.selected.gc-tag{background:var(--gc-fill);border-color:var(--gc-stroke);color:var(--gc-text)}
+.tag-opt.selected.plain-tag{background:var(--focus-fill);border-color:var(--focus-stroke);color:var(--focus-text)}
+
+/* journal */
+#journal-view{padding:4px 0}
+.jv-day{margin-bottom:14px}
+.jv-day-header{font-size:12px;font-weight:500;color:var(--text2);margin-bottom:6px;padding-bottom:4px;border-bottom:0.5px solid var(--border)}
+.session-card{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:8px 10px;margin-bottom:6px;font-size:12px;color:var(--text)}
+.session-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.session-tag{font-size:10px;padding:2px 6px;border-radius:4px;background:var(--bg3);color:var(--text3);border:0.5px solid var(--border)}
+
+/* ── Auth screen ── */
+#auth-screen{position:fixed;inset:0;background:var(--bg);z-index:500;display:flex;align-items:center;justify-content:center}
+#auth-box{background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:32px;width:340px;display:flex;flex-direction:column;gap:14px}
+#auth-box h2{font-size:18px;font-weight:500;text-align:center;color:var(--text)}
+#auth-box p{font-size:12px;color:var(--text3);text-align:center;line-height:1.5}
+#auth-box input{font-size:13px;padding:8px 10px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-family:var(--font);width:100%}
+#auth-box input:focus{outline:none;border-color:var(--focus-stroke)}
+.auth-btn{font-size:13px;padding:9px;border:0.5px solid var(--border2);border-radius:var(--radius);cursor:pointer;background:transparent;color:var(--text);font-family:var(--font);width:100%}
+.auth-btn:hover{background:var(--bg3)}
+.auth-btn.primary{background:var(--focus-fill);border-color:var(--focus-stroke);color:var(--focus-text)}
+.auth-btn.primary:hover{opacity:.9}
+#auth-msg{font-size:12px;text-align:center;min-height:16px}
+#auth-msg.err{color:#c0392b}
+#auth-msg.ok{color:var(--drill-text)}
+#user-bar{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text3)}
+</style>
+</head>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<body>
+
+<!-- Auth screen — shown until user is logged in -->
+<div id="auth-screen">
+  <div id="auth-box">
+    <h2>BJJ Mastery Tree</h2>
+    <p id="auth-subtitle">Sign in to access your map across all devices.</p>
+    <input type="email" id="auth-email" placeholder="Email address" autocomplete="email"/>
+    <input type="password" id="auth-password" placeholder="Password" autocomplete="current-password"/>
+    <div id="auth-msg"></div>
+    <button class="auth-btn primary" onclick="authSignIn()">Sign in</button>
+    <button class="auth-btn" onclick="authSignUp()">Create account</button>
+    <button class="auth-btn" id="btn-reset-pw" onclick="authResetPassword()" style="font-size:11px;border:none;color:var(--text3);padding:2px">Forgot password?</button>
+  </div>
+</div>
+<div id="toolbar">
+  <h1>BJJ Mastery Tree</h1>
+  <button class="tb-btn active" id="btn-map" onclick="showView('map')">Map</button>
+  <button class="tb-btn" id="btn-journal" onclick="showView('journal')">Journal</button>
+  <div id="user-bar">
+    <span id="user-email-display"></span>
+    <button class="tb-btn" onclick="authSignOut()">Sign out</button>
+  </div>
+</div>
+<div id="main">
+  <div id="map-panel" onclick="onMapPanelClick(event)">
+    <div id="map-view">
+      <!-- Each section has its own SVG for independent scaling -->
+      <div id="sec-principles" style="margin-bottom:0">
+        <svg id="svg-principles" width="100%" style="display:block"></svg>
+      </div>
+      <div id="sec-components" style="margin-bottom:0">
+        <svg id="svg-components" width="100%" style="display:block"></svg>
+      </div>
+      <div id="sec-gameplan" style="overflow-x:auto;margin-bottom:0">
+        <svg id="svg-gameplan" style="display:block;min-width:100%"></svg>
+      </div>
+      <div id="sec-classwork" style="overflow-x:auto">
+        <svg id="svg-classwork" style="display:block;min-width:100%"></svg>
+      </div>
+    </div>
+    <div id="journal-view" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <span style="font-size:13px;color:var(--text2)">Session log — newest first</span>
+        <button class="action-btn" onclick="openNewSessionModal()">+ Log session</button>
+      </div>
+      <div id="all-journal"></div>
+    </div>
+  </div>
+  <div id="right-panel" class="hidden">
+    <div id="right-inner">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+        <h2 id="d-title"></h2>
+        <button class="action-btn" onclick="closePanel()" style="padding:3px 8px;font-size:11px;flex-shrink:0">✕</button>
+      </div>
+      <div id="d-badge" class="badge"></div>
+
+      <!-- Edit/Delete controls for principles and components -->
+      <div id="blk-pc-actions" style="display:none;gap:6px;flex-wrap:wrap">
+        <button class="action-btn" id="btn-edit-toggle" onclick="toggleEditMode()">Edit</button>
+        <button class="action-btn danger" onclick="deletePrincipleOrComponent()">Delete</button>
+      </div>
+
+      <!-- Read view -->
+      <div id="blk-read-view">
+        <div id="blk-desc"><div class="d-label">About</div><div class="d-body" id="d-desc"></div></div>
+        <div id="blk-sub"><div class="d-label">Sub-components</div><div class="d-body" id="d-sub"></div></div>
+        <div id="blk-concepts"><div class="d-label">Key Concepts</div><div class="d-body" id="d-concepts"></div></div>
+        <div id="blk-prefs"><div class="d-label">Governing Principles</div><div id="d-prefs" style="margin-top:4px"></div></div>
+        <div id="blk-mistakes"><div class="d-label">Common Mistakes &amp; Fixes</div><div class="d-body" id="d-mistakes"></div></div>
+      </div>
+
+      <!-- Edit view (principles / components) -->
+      <div id="blk-edit-view" style="display:none;flex-direction:column;gap:10px">
+        <div>
+          <div class="d-label" style="margin-bottom:4px">Label</div>
+          <input class="text-input" id="edit-label" placeholder="e.g. Leverage"/>
+        </div>
+        <div>
+          <div class="d-label" style="margin-bottom:4px">Sub-label</div>
+          <input class="text-input" id="edit-sublabel" placeholder="e.g. Mechanical advantage"/>
+        </div>
+        <div>
+          <div class="d-label" style="margin-bottom:4px">Description</div>
+          <textarea class="note-box" id="edit-desc" style="min-height:70px"></textarea>
+        </div>
+        <!-- Dynamic concept/sub editor -->
+        <div id="edit-items-wrap">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <div class="d-label" id="edit-items-label">Concepts</div>
+            <button class="action-btn" style="font-size:11px;padding:3px 8px" onclick="addEditItem()">+ Add</button>
+          </div>
+          <div id="edit-items-list"></div>
+        </div>
+        <!-- Component-only: governing principles tags -->
+        <div id="edit-gc-principles" style="display:none">
+          <div class="d-label" style="margin-bottom:5px">Governing Principles</div>
+          <div class="tag-grid" id="edit-gc-prefs-grid"></div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:4px">
+          <button class="action-btn full" onclick="saveEditPrincipleOrComponent()">Save changes</button>
+          <button class="action-btn full" onclick="cancelEditMode()">Cancel</button>
+        </div>
+      </div>
+      <!-- Gameplan/ClassWork node editing -->
+      <div id="blk-node-edit" style="display:none">
+        <div class="d-label" style="margin-bottom:5px">Node name</div>
+        <input class="text-input" id="node-name-input" placeholder="e.g. DLR Guard"/>
+        <div style="margin-top:10px">
+          <div class="d-label" style="margin-bottom:5px">Tags — Principles</div>
+          <div class="tag-grid" id="tag-principles"></div>
+        </div>
+        <div style="margin-top:10px">
+          <div class="d-label" style="margin-bottom:5px">Tags — Game Components</div>
+          <div class="tag-grid" id="tag-components"></div>
+        </div>
+        <button class="action-btn full" style="margin-top:10px" onclick="saveNodeEdit()">Save changes</button>
+        <button class="action-btn full danger" style="margin-top:6px" onclick="deleteNode()">Delete node</button>
+      </div>
+      <!-- Session count for gameplan/classwork nodes -->
+      <div id="blk-session-count" style="display:none">
+        <div class="d-label">Sessions logged</div>
+        <div id="d-session-count" style="font-size:22px;font-weight:500;color:var(--text);margin-top:4px">0</div>
+      </div>
+      <!-- Notes for gameplan/classwork -->
+      <div id="blk-notes" style="display:none">
+        <div class="d-label" style="margin-bottom:4px">Notes</div>
+        <div id="d-notes-list"></div>
+        <textarea class="note-box" id="note-input" placeholder="Add a note…" style="margin-top:6px"></textarea>
+        <button class="action-btn full" onclick="saveNote()" style="margin-top:4px">Save note</button>
+      </div>
+      <!-- Cross-reference arrows -->
+      <div id="blk-add-conn" style="display:none">
+        <div class="d-label" style="margin-bottom:6px">Cross-reference arrows</div>
+        <div id="cross-arrows-list"></div>
+        <div style="display:flex;gap:6px;margin-top:6px">
+          <select class="sel-input" id="conn-target-sel" style="flex:1"></select>
+          <button class="action-btn" onclick="addCrossArrow()" style="white-space:nowrap">+ Add</button>
+        </div>
+      </div>
+      <!-- Add child node -->
+      <div id="blk-add-child" style="display:none">
+        <div class="d-label" style="margin-bottom:5px">Spawn child node</div>
+        <button class="action-btn full" onclick="spawnChild()">+ Add child node</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="legend">
+  <div class="leg"><div class="leg-dot" style="background:var(--p-stroke)"></div>Principle</div>
+  <div class="leg"><div class="leg-dot" style="background:var(--gc-stroke)"></div>Game Component</div>
+  <div class="leg"><div class="leg-dot" style="background:#D85A30"></div>Gameplan</div>
+  <div class="leg"><div class="leg-dot" style="background:#885AB7"></div>Class Work</div>
+  <div class="leg" style="margin-left:8px;color:var(--text3);font-style:italic">Click any Principle or Component to filter</div>
+</div>
+<div id="databar">
+  <span id="save-indicator">Loading…</span>
+  <button class="action-btn" onclick="exportData()">Export backup ↓</button>
+  <button class="action-btn" onclick="document.getElementById('import-file').click()">Import backup ↑</button>
+  <input type="file" id="import-file" accept=".json" onchange="importData(event)"/>
+</div>
+<div id="toast"></div>
+<div id="modal-overlay">
+  <div id="modal-box">
+    <h3 id="modal-title"></h3>
+    <div id="modal-body"></div>
+    <div class="modal-btns" id="modal-btns"></div>
+  </div>
+</div>
+<script>
+/* ══════════════════════════════════════════
+   SUPABASE CONFIG
+══════════════════════════════════════════ */
+const SUPABASE_URL = 'https://xenmxovdzhptkvezwfwn.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhlbm14b3ZkemhwdGt2ZXp3ZnduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyOTMwNDgsImV4cCI6MjA5MTg2OTA0OH0.8ZRMaCRNI9YGYEf1vC7DRmVYxo_6MpPPOUzm8dC9bhk';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ══════════════════════════════════════════
+   SCHEMA
+══════════════════════════════════════════ */
+const SCHEMA_VERSION = 2;
+const LS_KEY = 'bjj_v2'; // kept as local cache key
+
+/* ══════════════════════════════════════════
+   FOUNDATIONAL PRINCIPLES
+══════════════════════════════════════════ */
+const PRINCIPLES = [
+  {id:'p-leverage',label:'Leverage',sub:'Mechanical advantage',
+   desc:'Using your skeleton and body geometry to create force multipliers. Every submission and sweep is built on a lever, a fulcrum, and a load.',
+   concepts:[
+     {t:'Lever arms',b:'Longer lever arm relative to the fulcrum = less force needed. An armbar uses the hip as the fulcrum — your whole body against one of theirs.'},
+     {t:'Angle of force',b:'Force applied perpendicular to a joint\'s range of motion is maximally efficient. Cranking at an angle bleeds energy. Find the line, then apply.'},
+     {t:'Break down before loading',b:'You cannot leverage a braced structure. Break posture or collapse a frame first — then leverage has something to work on.'},
+     {t:'Mechanical disadvantage of strength',b:'In a leveraged position, the opponent\'s muscular strength becomes irrelevant. This is the core promise of BJJ.'},
+   ]},
+  {id:'p-position',label:'Position before submission',sub:'Hierarchy of control',
+   desc:'Dominant positions are earned before submissions are attempted. Chasing a sub from a bad position telegraphs intent and puts you at risk.',
+   concepts:[
+     {t:'The positional hierarchy',b:'Back > Mount > Knee-on-belly > Side control > Half guard top > Guard > Half guard bottom > Side control bottom.'},
+     {t:'Consolidate before attacking',b:'When you land in a new position, settle and establish control first. Rushing to submit from an unstable position is how you lose it.'},
+     {t:'Position as the submission',b:'Well-held back control or mount creates so much pressure that opponents make desperate mistakes — which you then exploit.'},
+     {t:'Return after failed subs',b:'When an attack fails, return to positional control before the next attempt. Never abandon position chasing a sub.'},
+   ]},
+  {id:'p-base',label:'Base, Posture & Structure',sub:'Stability and alignment',
+   desc:'Your ability to resist being swept, taken down, or off-balanced. Base is your relationship with gravity. Posture is spinal alignment. Structure is how you transmit force through your skeleton.',
+   concepts:[
+     {t:'Low center of gravity',b:'Hips low and back = stable base. Hips high = mobile but unstable, easy to sweep.'},
+     {t:'Tripod and posts',b:'Three points of contact create a stable base. Removing one creates instability — and that\'s how sweeps are set up.'},
+     {t:'Posture in guard',b:'Head up, spine neutral, elbows inside the knees. Broken posture allows collar chokes, triangles, and armbars.'},
+     {t:'Structural transmission',b:'Force flows best through an aligned skeleton. Bent wrists, collapsed elbows, or curved spine bleed force and cause injury.'},
+   ]},
+  {id:'p-control',label:'Control & Pressure',sub:'Limiting options',
+   desc:'Control is limiting your opponent\'s choices while preserving your own. Pressure is body weight and friction to slow reactions and tax endurance.',
+   concepts:[
+     {t:'Remove degrees of freedom',b:'Control the hips and movement options collapse. Control the head and the body follows.'},
+     {t:'Weight not strength',b:'Pressure uses falling body weight, not muscular force. Gravity is free and inexhaustible.'},
+     {t:'Connection vs. disconnection',b:'Close distance to neutralize explosive strength. Create distance to set up sweeps and submissions.'},
+     {t:'Psychological control',b:'Sustained control wears down an opponent\'s will and cardio even before submissions appear.'},
+   ]},
+  {id:'p-frames',label:'Frames & Connection',sub:'Creating and closing space',
+   desc:'Frames are structural barriers you create with your skeleton to manage distance. Connection is the opposite: closing distance to negate explosiveness.',
+   concepts:[
+     {t:'What makes a good frame',b:'A frame uses bone, not muscle. Forearm across the throat, elbow bent and backed by your shoulder — that\'s a frame. A bent arm pushed against a chest is just muscle and will fail.'},
+     {t:'Framing creates time',b:'A good frame doesn\'t need to hold forever. It buys the second you need to shrimp, recover guard, or transition.'},
+     {t:'When to connect',b:'When an opponent is explosive, connection neutralizes them. Close distance, attach your chest to theirs, and their big movements become small.'},
+     {t:'Shin frames in guard',b:'Your shin across someone\'s hip in open guard is the same structural barrier as a forearm on their throat. Angle makes it rigid or collapses it.'},
+   ]},
+  {id:'p-balance',label:'Balance & Off-balancing',sub:'Kuzushi',
+   desc:'Borrowed from judo — kuzushi (breaking balance). Any technique applied to a balanced opponent will fail. Destroy their equilibrium first, then apply the technique.',
+   concepts:[
+     {t:'Off-balance precedes everything',b:'A sweep works because the opponent\'s weight is already moving in the direction you\'re pushing. The technique finishes what kuzushi started.'},
+     {t:'Eight directions',b:'Front, back, left, right, and four diagonals. Every technique exploits one. Identify which direction you\'re breaking to before committing.'},
+     {t:'Reactions create openings',b:'When you push, they push back. When you pull, they pull back. Reading and using these reactions is timing.'},
+     {t:'Maintain your own balance',b:'You cannot off-balance someone if you are off-balance yourself. Establish equilibrium before extending into theirs.'},
+   ]},
+];
+
+/* ══════════════════════════════════════════
+   GAME COMPONENTS
+══════════════════════════════════════════ */
+const GAME_COMPONENTS = [
+  {id:'gc-guard',label:'Guard',sub:'Bottom offensive & defensive platform',
+   desc:'The guard is BJJ\'s defining innovation — the ability to be dangerous and defensive from your back. Guard is not just an offensive tool; it encompasses protecting position, managing distance, and creating threats simultaneously.',
+   subs:[
+     {t:'Closed Guard',b:'The foundational guard — legs locked around the opponent\'s waist. Primarily offensive: break posture, attack submissions and sweeps. Also a recovery position when open guard is threatened.'},
+     {t:'Guard Retention',b:'The defensive art of keeping your guard when the opponent attempts to pass. Frames, hip movement, re-routing legs, and recovering hooks before the pass is completed. Often the difference between a good and great guard player.'},
+     {t:'Sweeps',b:'Reversals from bottom guard that invert position. Sweeps are the guard\'s primary mechanism for converting defensive situations into offensive ones. Every guard system is built around its sweep threats.'},
+   ],
+   principles:['p-frames','p-balance','p-control','p-leverage']},
+  {id:'gc-passing',label:'Guard Passing',sub:'Dismantling guard to establish top control',
+   desc:'Passing is the systematic removal of the guard player\'s tools — grips, frames, hooks — until a dominant top position is established. Passing requires both a stable base and the ability to off-balance the guard player.',
+   concepts:[
+     {t:'Pressure passing',b:'Uses body weight and friction to flatten and immobilize the guard player before passing. Slow and methodical. Favors heavier, stronger grapplers.'},
+     {t:'Speed / torreando passing',b:'Uses lateral movement and grip control to go around the guard before the guard player can react. Favors quick, agile grapplers.'},
+     {t:'Knee-cut / leg-weave',b:'Drives through the guard with the knee, cutting across the guard player\'s legs. A middle ground between pressure and speed passing.'},
+   ],
+   principles:['p-base','p-control','p-balance']},
+  {id:'gc-top',label:'Top Positions & Pins',sub:'Immobilize, exhaust, submit',
+   desc:'Side control, mount, knee-on-belly. The purpose of top position is to make the bottom player carry your weight, limit their movement, and break down their defense over time until submissions become available.',
+   concepts:[
+     {t:'Side control',b:'The first top position after passing. Primary goal: flatten the opponent, establish chest-to-chest connection, and prevent their frames from creating space.'},
+     {t:'Mount',b:'Hips over their hips. The highest-percentage position for submissions. Low mount is more stable than high mount. Maintaining mount requires constant adjustment as opponent escapes.'},
+     {t:'Knee-on-belly',b:'A transitional position used to apply pressure, score points, and move to other top positions. Highly mobile — can transition to mount, side control, or take the back.'},
+   ],
+   principles:['p-control','p-base','p-leverage']},
+  {id:'gc-back',label:'Back Control',sub:'Attack from behind — no direct defense',
+   desc:'The highest position in BJJ because the opponent cannot directly face you. Back control creates an inescapable submission threat environment. Seatbelt and hooks are the primary control tools.',
+   concepts:[
+     {t:'Seatbelt grip',b:'Top arm = choking arm (over the shoulder). Bottom arm = control arm (under the armpit). The seatbelt is secured before hooks — it\'s the most critical control element.'},
+     {t:'Hooks vs. body triangle',b:'Hooks (heels inside thighs) are more flexible. Body triangle (legs locked around the torso) is more secure but requires flexibility. Choose based on opponent\'s hip size and your leg length.'},
+     {t:'Maintaining position',b:'When opponent turns in: near-side armbar or kimura. When opponent slides down: re-establish hooks and bring them back up. Have a response for every common escape attempt.'},
+   ],
+   principles:['p-control','p-leverage','p-position']},
+  {id:'gc-escapes',label:'Escapes & Recovery',sub:'Restore parity from disadvantage',
+   desc:'The most underloved component — the ability to escape bad positions is what makes the rest of the game sustainable. Escapes return you to neutral (guard) or advantaged (reversal) state.',
+   concepts:[
+     {t:'Frame first',b:'Before any escape movement, establish a frame. A frame creates the space needed to move. Trying to escape without framing is like pushing a wall.'},
+     {t:'Hip escape (shrimp)',b:'The fundamental escape movement. Drive hips away while turning to your side. Creates space for frames and guard recovery. The foundation of almost all escapes.'},
+     {t:'Trap and roll',b:'Primarily from mount. Trap the opponent\'s arm and foot on the same side, then bridge and roll. Uses their own base against them.'},
+   ],
+   principles:['p-frames','p-base','p-balance']},
+  {id:'gc-takedowns',label:'Takedowns & Guard Pulls',sub:'Dictate where the ground game begins',
+   desc:'The transition from standing to ground determines starting position for everything that follows. You control this transition either by taking top position via takedown, or by establishing your guard via pull.',
+   subs:[
+     {t:'Grip Fighting',b:'The meta-game before any takedown or guard pull. Controls who gets their preferred grips and therefore who dictates the sequence. In the gi, sleeve and collar grips determine passing or guard options. In no-gi, wrist and elbow control. Losing the grip battle often means losing the takedown battle.'},
+   ],
+   concepts:[
+     {t:'Double and single leg',b:'Penetration shot, level change, drive through. The foundation of wrestling-based takedowns. Applicable in both gi and no-gi.'},
+     {t:'Guard pull',b:'Pulling guard is a deliberate choice to start on the bottom in your guard. Preferable when your guard is stronger than your wrestling, or when opponent\'s takedown defense is superior.'},
+     {t:'Trips and throws',b:'Off-balance the opponent first (kuzushi), then use their momentum with a trip or throw. Judo and wrestling entries both applicable.'},
+   ],
+   principles:['p-balance','p-base','p-control']},
+  {id:'gc-submissions',label:'Submissions',sub:'Convert advantage into a finish',
+   desc:'Submissions are the end goal of positional work — the moment leverage is applied to force a tap. They also function as a constant threat that forces defensive reactions you can exploit even when not finishing.',
+   concepts:[
+     {t:'Upper body locks',b:'Armbars, kimuras, americanas, shoulder locks. All use the principle of isolating one joint and applying force beyond its range of motion. Elbow and shoulder are the primary targets.'},
+     {t:'Chokes',b:'Blood chokes (compress carotid arteries) and air chokes (compress windpipe). Blood chokes are faster and require less force. Rear naked choke, triangle, and bow-and-arrow are the primary finishes.'},
+     {t:'Leg attacks',b:'Heel hooks, kneebars, toe holds. Attack the knee and ankle joints. Require understanding of leg entanglements before attempting. High-percentage in no-gi at advanced levels.'},
+   ],
+   principles:['p-leverage','p-position','p-control']},
+  {id:'gc-transitions',label:'Transitions & Scrambles',sub:'Navigate the space between positions',
+   desc:'Not all BJJ is clean positional work. Scrambles are chaotic moments between positions where both players are moving. The goal is to emerge from chaos in a better position than you entered.',
+   concepts:[
+     {t:'Scramble principles',b:'Whoever re-establishes structure and base first usually wins the scramble. Stay connected to your opponent during chaos rather than disengaging — disconnection creates space they can use.'},
+     {t:'Chaining positions',b:'Transitions between positions should be deliberate chains, not reactions. Know where you are going before you start moving. E.g. sweep → pass attempt → back take if they turtle.'},
+     {t:'Dog fight / single leg',b:'A common scramble position. Both players fighting for a single leg. Understand your options: finish the shot, trip, snap down, or transition to back.'},
+   ],
+   principles:['p-balance','p-base','p-frames']},
+];
+
+/* ══════════════════════════════════════════
+   APP STATE (persisted)
+══════════════════════════════════════════ */
+let appState = {
+  schemaVersion: SCHEMA_VERSION,
+  gameplanNodes: [],   // {id, label, parentId, crossArrows:[id], tags:{principles:[],components:[]}, notes:[{ts,text}]}
+  classworkNodes: [],
+  sessions: [],        // {id, date, notes, taggedNodes:[id]}
+  principles: [],      // editable copy of PRINCIPLES (seeded on first load)
+  components: [],      // editable copy of GAME_COMPONENTS (seeded on first load)
+};
+
+let selected = null;      // {type:'principle'|'component'|'gameplan'|'classwork', id}
+let filterTag = null;     // {type:'principle'|'component', id} — highlights matching nodes
+let currentView = 'map';
+
+/* ══════════════════════════════════════════
+   STORAGE
+══════════════════════════════════════════ */
+/* ══════════════════════════════════════════
+   STORAGE — Supabase + localStorage cache
+══════════════════════════════════════════ */
+async function loadState(){
+  // Try Supabase first (authoritative)
+  try{
+    const {data:{user}} = await sb.auth.getUser();
+    if(user){
+      const {data, error} = await sb.from('user_data').select('data').eq('user_id', user.id).single();
+      if(!error && data && data.data){
+        appState = Object.assign({}, appState, data.data);
+        // Update local cache
+        try{ localStorage.setItem(LS_KEY, JSON.stringify(appState)); }catch(e){}
+        seedDefaults();
+        updateSaveIndicator();
+        return;
+      }
+    }
+  }catch(e){}
+  // Fall back to localStorage cache (offline / first load)
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(raw){ appState = Object.assign({}, appState, JSON.parse(raw)); }
+  }catch(e){}
+  seedDefaults();
+  updateSaveIndicator();
+}
+
+function seedDefaults(){
+  if(!appState.principles || appState.principles.length===0)
+    appState.principles = JSON.parse(JSON.stringify(PRINCIPLES));
+  if(!appState.components || appState.components.length===0)
+    appState.components = JSON.parse(JSON.stringify(GAME_COMPONENTS));
+}
+
+async function persist(){
+  // Always update local cache immediately for fast UI
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(appState)); }catch(e){}
+  // Then push to Supabase
+  try{
+    const {data:{user}} = await sb.auth.getUser();
+    if(user){
+      await sb.from('user_data').upsert(
+        {user_id: user.id, data: appState, updated_at: new Date().toISOString()},
+        {onConflict: 'user_id'}
+      );
+    }
+  }catch(e){ console.warn('Supabase sync failed, saved locally:', e); }
+  updateSaveIndicator();
+}
+function updateSaveIndicator(){
+  const notes = appState.sessions.reduce((a,s)=>a+((s.notes||'').length>0?1:0),0);
+  const gp = appState.gameplanNodes.length;
+  const cw = appState.classworkNodes.length;
+  document.getElementById('save-indicator').textContent =
+    `${appState.sessions.length} sessions · ${gp} gameplan nodes · ${cw} classwork nodes · auto-saved`;
+}
+
+/* ══════════════════════════════════════════
+   EXPORT / IMPORT
+══════════════════════════════════════════ */
+function exportData(){
+  const obj = {
+    _meta:{schemaVersion:SCHEMA_VERSION, exportedAt:new Date().toISOString(), exportedAtReadable:new Date().toLocaleString()},
+    ...appState
+  };
+  const blob = new Blob([JSON.stringify(obj,null,2)],{type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=`bjj_backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click(); URL.revokeObjectURL(url);
+}
+function importData(event){
+  const file = event.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const data = JSON.parse(e.target.result);
+      if(!data._meta) throw new Error('Invalid file');
+      showModal('Import backup?',
+        `<p style="font-size:12px;color:var(--text2);line-height:1.6">From ${data._meta.exportedAtReadable}.<br>This will merge your backup into the current state. Existing sessions and nodes are preserved.</p>`,
+        [{label:'Cancel',action:closeModal},{label:'Import',action:()=>{
+          if(data.gameplanNodes) appState.gameplanNodes = data.gameplanNodes;
+          if(data.classworkNodes) appState.classworkNodes = data.classworkNodes;
+          if(data.sessions) appState.sessions = data.sessions;
+          persist(); renderTree(); closeModal();
+          alert('Import successful.');
+        }}]
+      );
+    }catch(err){ alert('Could not parse backup file.'); }
+    event.target.value='';
+  };
+  reader.readAsText(file);
+}
+
+/* ══════════════════════════════════════════
+   MODAL
+══════════════════════════════════════════ */
+function showModal(title, bodyHtml, buttons){
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = bodyHtml;
+  const btns = document.getElementById('modal-btns');
+  btns.innerHTML='';
+  buttons.forEach(b=>{
+    const btn = document.createElement('button');
+    btn.className='action-btn'; btn.textContent=b.label;
+    btn.onclick=b.action; btns.appendChild(btn);
+  });
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal(){ document.getElementById('modal-overlay').classList.remove('open'); }
+
+/* ══════════════════════════════════════════
+   NODE HELPERS
+══════════════════════════════════════════ */
+function uid(){ return 'n'+Date.now()+Math.random().toString(36).slice(2,6); }
+
+function getNodes(layer){ return layer==='gameplan'?appState.gameplanNodes:appState.classworkNodes; }
+
+function sessionCountForNode(nodeId){
+  return appState.sessions.filter(s=>(s.taggedNodes||[]).includes(nodeId)).length;
+}
+
+/* ══════════════════════════════════════════
+   LAYOUT ENGINE
+   Builds a tree layout for a set of nodes with parentId chains.
+   Returns {id -> {x,y,w,h}}
+══════════════════════════════════════════ */
+const NODE_W = 160, NODE_H = 48, H_GAP = 48, V_GAP = 52;
+
+function buildLayout(nodes){
+  if(!nodes.length) return {};
+  // Build adjacency
+  const children = {};
+  const roots = [];
+  nodes.forEach(n=>{ children[n.id]=[]; });
+  nodes.forEach(n=>{
+    if(n.parentId && children[n.parentId]!==undefined){
+      children[n.parentId].push(n.id);
+    } else if(!n.parentId){
+      roots.push(n.id);
+    }
+  });
+  // Assign depths and subtree widths
+  const pos = {};
+  function subtreeWidth(id){
+    const ch = children[id]||[];
+    if(!ch.length) return NODE_W;
+    return Math.max(NODE_W, ch.reduce((sum,c)=>sum+subtreeWidth(c)+H_GAP,0)-H_GAP);
+  }
+  function place(id, x, y){
+    const ch = children[id]||[];
+    const sw = subtreeWidth(id);
+    pos[id]={x: x+sw/2-NODE_W/2, y, w:NODE_W, h:NODE_H};
+    if(!ch.length) return;
+    let cx = x;
+    ch.forEach(c=>{
+      const csw = subtreeWidth(c);
+      place(c, cx, y+NODE_H+V_GAP);
+      cx += csw+H_GAP;
+    });
+  }
+  let startX = 0;
+  roots.forEach(r=>{
+    const sw = subtreeWidth(r);
+    place(r, startX, 0);
+    startX += sw + H_GAP*2;
+  });
+  return pos;
+}
+
+/* ══════════════════════════════════════════
+   FILTER LOGIC
+══════════════════════════════════════════ */
+function nodeMatchesFilter(node){
+  if(!filterTag) return true;
+  const tags = node.tags||{principles:[],components:[]};
+  if(filterTag.type==='principle') return (tags.principles||[]).includes(filterTag.id);
+  if(filterTag.type==='component') return (tags.components||[]).includes(filterTag.id);
+  return false;
+}
+function setFilter(type, id){
+  if(filterTag && filterTag.type===type && filterTag.id===id){
+    filterTag=null;
+  } else {
+    filterTag={type,id};
+  }
+  renderTree();
+}
+function clearFilter(){ filterTag=null; renderTree(); }
+function onMapPanelClick(e){
+  // Clear filter if clicking the panel itself or the journal view (not a node)
+  if(e.target===document.getElementById('map-panel')||
+     e.target===document.getElementById('journal-view')||
+     e.target===document.getElementById('all-journal')){
+    clearFilter();
+  }
+}
+
+/* ══════════════════════════════════════════
+   TEXT WRAP HELPER
+══════════════════════════════════════════ */
+function wrapText(text, cx, cy, maxW, fontSize, fontWeight, fillStr){
+  const charW = fontSize * (fontWeight >= 500 ? 0.62 : 0.58);
+  const maxChars = Math.max(4, Math.floor(maxW / charW));
+  const words = String(text).split(' ');
+  const lines = [];
+  let line = '';
+  words.forEach(w=>{
+    const test = line ? line+' '+w : w;
+    if(test.length <= maxChars){ line = test; }
+    else { if(line) lines.push(line); line = w; }
+  });
+  if(line) lines.push(line);
+  const lineH = fontSize * 1.25;
+  const totalH = lines.length * lineH;
+  const y0 = cy - (totalH / 2) + lineH * 0.5;
+  return lines.map((l,i)=>
+    `<text x="${cx}" y="${y0 + i*lineH}" text-anchor="middle" dominant-baseline="central"
+      style="font-size:${fontSize}px;font-weight:${fontWeight};fill:${fillStr};font-family:var(--font)">${l}</text>`
+  ).join('');
+}
+
+/* ══════════════════════════════════════════
+   RENDER TREE
+══════════════════════════════════════════ */
+function renderTree(){
+  renderPrinciples();
+  renderComponents();
+  renderUserSection('gameplan');
+  renderUserSection('classwork');
+}
+
+/* ─── Shared SVG defs ─── */
+// Arrowhead as a small chevron path drawn at tip point toward direction from→to
+function arrowHead(fx, fy, tx, ty, color, opacity){
+  opacity = opacity === undefined ? 1 : opacity;
+  const dx = tx-fx, dy = ty-fy;
+  const len = Math.sqrt(dx*dx+dy*dy)||1;
+  const ux = dx/len, uy = dy/len;
+  const px = -uy, py = ux;
+  const sz = 9, hw = 4.5;
+  const p0 = `${tx},${ty}`;
+  const p1 = `${tx-ux*sz+px*hw},${ty-uy*sz+py*hw}`;
+  const p2 = `${tx-ux*sz-px*hw},${ty-uy*sz-py*hw}`;
+  return `<polygon points="${p0} ${p1} ${p2}" fill="${color}" opacity="${opacity}" stroke="none"/>`;
+}
+
+const ARROW_DEFS = '';
+
+/* ─── PRINCIPLES ─── */
+function renderPrinciples(){
+  const svg = document.getElementById('svg-principles'); if(!svg) return;
+  const W=900, MARGIN=30;
+  const P_COLS=3, PW=170, PH=56, PGX=16, PGY=10;
+  const pRows = Math.ceil(appState.principles.length/P_COLS);
+  const P_TOTAL_W = P_COLS*PW+(P_COLS-1)*PGX;
+  const P_X0 = (W-P_TOTAL_W)/2;
+  const P_Y0 = 44;
+  const H = P_Y0 + pRows*(PH+PGY) + 20;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  let h = ARROW_DEFS;
+  h += `<rect x="0" y="0" width="${W}" height="${H}" fill="transparent" onclick="clearFilter()"/>`;
+  h += sectionHeaderSVG('FOUNDATIONAL PRINCIPLES', W, MARGIN, P_Y0-16);
+  h += `<g class="node-g" onclick="addNewPrinciple()">
+    <rect x="${W-120}" y="${P_Y0-28}" width="110" height="22" rx="5" fill="var(--p-fill)" stroke="var(--p-stroke)" stroke-width=".8"/>
+    <text x="${W-65}" y="${P_Y0-17}" text-anchor="middle" dominant-baseline="central" style="font-size:10px;fill:var(--p-text);font-family:var(--font)">+ Add principle</text>
+  </g>`;
+  appState.principles.forEach((p,i)=>{
+    const col=i%P_COLS, row=Math.floor(i/P_COLS);
+    const px=P_X0+col*(PW+PGX), py=P_Y0+row*(PH+PGY);
+    const sel=selected&&selected.id===p.id;
+    const lit=filterTag&&filterTag.type==='principle'&&filterTag.id===p.id;
+    const sw=sel?2:.8;
+    const glow=lit?'filter:drop-shadow(0 0 5px #534AB7)':'';
+    h+=`<g class="node-g" onclick="clickPrinciple('${p.id}')" style="${glow}">
+      <rect x="${px}" y="${py}" width="${PW}" height="${PH}" rx="7" fill="var(--p-fill)" stroke="${sel?'#26215C':'var(--p-stroke)'}" stroke-width="${sw}"/>
+      ${wrapText(p.label, px+PW/2, py+16, PW-12, 11, 500, 'var(--p-text)')}
+      ${wrapText(p.sub, px+PW/2, py+40, PW-12, 10, 400, 'var(--p-stroke)')}
+    </g>`;
+  });
+  svg.innerHTML = h;
+}
+
+/* ─── GAME COMPONENTS ─── */
+function renderComponents(){
+  const svg = document.getElementById('svg-components'); if(!svg) return;
+  const W=900, MARGIN=30;
+  const GC_COLS=4, GCW=180, GCH=56, GCGX=14, GCGY=10;
+  const gcRows = Math.ceil(appState.components.length/GC_COLS);
+  const GC_TOTAL_W = GC_COLS*GCW+(GC_COLS-1)*GCGX;
+  const GC_X0 = (W-GC_TOTAL_W)/2;
+  const DIV_Y=10, LABEL_Y=24, GC_Y0=48;
+  const H = GC_Y0 + gcRows*(GCH+GCGY) + 20;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  let h = ARROW_DEFS;
+  h += `<rect x="0" y="0" width="${W}" height="${H}" fill="transparent" onclick="clearFilter()"/>`;
+  h += `<line x1="${MARGIN}" y1="${DIV_Y}" x2="${W-MARGIN}" y2="${DIV_Y}" stroke="var(--border)" stroke-width=".5"/>`;
+  h += sectionHeaderSVG('GAME COMPONENTS', W, MARGIN, LABEL_Y);
+  h += `<g class="node-g" onclick="addNewComponent()">
+    <rect x="${W-124}" y="2" width="114" height="22" rx="5" fill="var(--gc-fill)" stroke="var(--gc-stroke)" stroke-width=".8"/>
+    <text x="${W-67}" y="13" text-anchor="middle" dominant-baseline="central" style="font-size:10px;fill:var(--gc-text);font-family:var(--font)">+ Add component</text>
+  </g>`;
+  appState.components.forEach((gc,i)=>{
+    const col=i%GC_COLS, row=Math.floor(i/GC_COLS);
+    const gx=GC_X0+col*(GCW+GCGX), gy=GC_Y0+row*(GCH+GCGY);
+    const sel=selected&&selected.id===gc.id;
+    const lit=filterTag&&filterTag.type==='component'&&filterTag.id===gc.id;
+    const sw=sel?2:.8;
+    const glow=lit?'filter:drop-shadow(0 0 5px #0F6E56)':'';
+    h+=`<g class="node-g" onclick="clickComponent('${gc.id}')" style="${glow}">
+      <rect x="${gx}" y="${gy}" width="${GCW}" height="${GCH}" rx="7" fill="var(--gc-fill)" stroke="${sel?'#04342C':'var(--gc-stroke)'}" stroke-width="${sw}"/>
+      ${wrapText(gc.label, gx+GCW/2, gy+16, GCW-12, 11, 500, 'var(--gc-text)')}
+      ${wrapText(gc.sub, gx+GCW/2, gy+40, GCW-12, 10, 400, 'var(--gc-stroke)')}
+    </g>`;
+  });
+  svg.innerHTML = h;
+}
+
+/* ─── GAMEPLAN / CLASSWORK ─── */
+// Scale floor: 60% of BASE_W. Below that, overflow-x scroll kicks in.
+const BASE_W = 900;
+const SCALE_FLOOR = 0.60;
+
+function renderUserSection(layer){
+  const isGP = layer==='gameplan';
+  const svgId = isGP?'svg-gameplan':'svg-classwork';
+  const secId = isGP?'sec-gameplan':'sec-classwork';
+  const svg = document.getElementById(svgId); if(!svg) return;
+  const sec = document.getElementById(secId); if(!sec) return;
+  const nodes = isGP?appState.gameplanNodes:appState.classworkNodes;
+  const strokeColor = isGP?'#D85A30':'#885AB7';
+  const strokeDark  = isGP?'#993C1D':'#5C3A8A';
+  const fillColor   = isGP?'#FAECE7':'#F3EDFB';
+  const markerUrl   = ''; // unused - arrowheads drawn inline
+  const sectionLabel = isGP?'YOUR GAMEPLAN':'CLASS WORK';
+
+  const MARGIN=30, LABEL_H=48, PAD_BOTTOM=50;
+  const crossArrowCount = nodes.reduce((sum,n)=>sum+(n.crossArrows||[]).length,0);
+  // Small top reserve for fallback arc if BFS fails; BFS routes through gaps so needs little extra space
+  const TOP_RESERVE = crossArrowCount > 0 ? 36 : 0;
+  const layout = buildLayout(nodes);
+  const keys = Object.keys(layout);
+
+  // Calculate raw content width needed
+  const rawMaxX = keys.length ? Math.max(...keys.map(k=>layout[k].x+layout[k].w)) : 0;
+  const rawMinX = keys.length ? Math.min(...keys.map(k=>layout[k].x)) : 0;
+  const contentW = rawMaxX - rawMinX;
+
+  // Always center the tree, clamping left edge to MARGIN
+  // Then measure actual right edge and add corridor space
+  const idealOffsetX = (BASE_W - contentW) / 2 - rawMinX;
+  const offsetX = Math.max(MARGIN, idealOffsetX);
+  const actualRightEdge = offsetX + rawMaxX + MARGIN + 160; // +160 for cross-arrow corridor
+
+  // vbW always fits all content — no clipping ever
+  const neededW = Math.max(BASE_W, actualRightEdge);
+
+  // Scale down if still readable, scroll if too small
+  let vbW, svgPixelW;
+  const scale = BASE_W / neededW;
+  if(scale >= SCALE_FLOOR){
+    // Zoom viewBox out to fit — SVG scales down proportionally
+    vbW = neededW;
+    svgPixelW = '100%';
+    sec.style.overflowX = 'hidden';
+  } else {
+    // At floor scale: fix viewBox at floor size, let container scroll
+    vbW = neededW; // viewBox matches content exactly — no clipping
+    svgPixelW = Math.round(neededW * SCALE_FLOOR) + 'px'; // SVG pixel width at floor scale
+    sec.style.overflowX = 'auto';
+  }
+
+  // Heights
+  const maxY = keys.length ? Math.max(...keys.map(k=>layout[k].y+layout[k].h)) : 60;
+  const NODE_Y0 = LABEL_H + TOP_RESERVE; // push nodes down to leave room above for cross-arrow lanes
+  const H = NODE_Y0 + maxY + PAD_BOTTOM;
+
+  svg.setAttribute('viewBox',`0 0 ${vbW} ${H}`);
+  svg.style.width = svgPixelW;
+  svg.style.height = 'auto';
+
+  let h = ARROW_DEFS;
+  h += `<rect x="0" y="0" width="${vbW}" height="${H}" fill="transparent" onclick="clearFilter()"/>`;
+  // Divider line + section label
+  h += `<line x1="${MARGIN}" y1="4" x2="${vbW-MARGIN}" y2="4" stroke="var(--border)" stroke-width=".5"/>`;
+  h += sectionHeaderSVG(sectionLabel, vbW, MARGIN, 20);
+
+  if(!nodes.length){
+    h+=`<text x="${vbW/2}" y="${NODE_Y0+30}" text-anchor="middle" style="font-size:12px;fill:var(--text3);font-family:var(--font)">No nodes yet.</text>`;
+    h+=`<g class="node-g" onclick="addRootNode('${layer}')">
+      <rect x="${vbW/2-70}" y="${NODE_Y0+46}" width="140" height="36" rx="7" fill="var(--bg2)" stroke="var(--border2)" stroke-width=".8" stroke-dasharray="4 3"/>
+      <text x="${vbW/2}" y="${NODE_Y0+64}" text-anchor="middle" dominant-baseline="central" style="font-size:12px;fill:var(--text3);font-family:var(--font)">+ Add first node</text>
+    </g>`;
+    svg.innerHTML = h;
+    return;
+  }
+
+  // ── Draw primary chain arrows FIRST (behind nodes) ──
+  // Arrowheads collected in `ah` and drawn AFTER nodes so they're not covered
+  let ah = '';
+  nodes.forEach(n=>{
+    if(!n.parentId) return;
+    const pp=layout[n.parentId], cp=layout[n.id];
+    if(!pp||!cp) return;
+    const x1=pp.x+offsetX+pp.w/2, y1=NODE_Y0+pp.y+pp.h;
+    const x2=cp.x+offsetX+cp.w/2, y2=NODE_Y0+cp.y;
+    const bothDim=filterTag&&!nodeMatchesFilter(n)&&!nodeMatchesFilter(nodes.find(x=>x.id===n.parentId)||{});
+    const op=bothDim?0.12:1;
+    const my=(y1+y2)/2;
+    h+=`<path d="M${x1} ${y1} C${x1} ${my} ${x2} ${my} ${x2} ${y2}"
+      fill="none" stroke="${strokeColor}" stroke-width="1.8" opacity="${op}"/>`;
+    // Arrow tip arrives at x2,y2 — collected in ah, drawn after nodes
+    ah+=arrowHead(x2, y2-20, x2, y2, strokeColor, op);
+  });
+
+  // ── Draw cross-reference arrows — grid-based pathfinder ──
+  // Divides the SVG canvas into a coarse grid, marks node-occupied cells,
+  // then runs BFS to find the shortest orthogonal path from source to target.
+  // Paths are smoothed with rounded corners.
+
+  const GRID = 16; // grid cell size in SVG units
+
+  // Build grid dimensions from viewBox
+  const gCols = Math.ceil(vbW / GRID) + 1;
+  const gRows = Math.ceil(H / GRID) + 1;
+
+  // Compute node bboxes in SVG space (with padding so paths hug edges cleanly)
+  const nBoxes = keys.map(k => {
+    const p = layout[k];
+    const lbl = (nodes.find(n => n.id === k) || {}).label || '';
+    const cw = 12 * 0.62, mc = Math.max(4, Math.floor((p.w - 14) / cw));
+    let ln = 1, cur = '';
+    lbl.split(' ').forEach(w => { const t = cur ? cur + ' ' + w : w; if (t.length <= mc) { cur = t; } else { ln++; cur = w; } });
+    const cnt = sessionCountForNode(k);
+    const nh = Math.max(p.h, ln * 16 + (cnt ? 16 : 0) + 14);
+    return {
+      x1: p.x + offsetX,
+      y1: NODE_Y0 + p.y,
+      x2: p.x + offsetX + p.w,
+      y2: NODE_Y0 + p.y + nh,
+      id: k
+    };
+  });
+
+  // Mark cells blocked by nodes (with 1-cell padding around each node)
+  // blocked[r][c] = true means that grid cell is inside or adjacent to a node
+  const blocked = [];
+  for (let r = 0; r < gRows; r++) {
+    blocked[r] = new Uint8Array(gCols);
+  }
+  nBoxes.forEach(b => {
+    // Convert bbox to grid cells, expand by 1 cell padding
+    const c1 = Math.max(0, Math.floor(b.x1 / GRID) - 1);
+    const c2 = Math.min(gCols - 1, Math.ceil(b.x2 / GRID) + 1);
+    const r1 = Math.max(0, Math.floor(b.y1 / GRID) - 1);
+    const r2 = Math.min(gRows - 1, Math.ceil(b.y2 / GRID) + 1);
+    for (let r = r1; r <= r2; r++) {
+      for (let c = c1; c <= c2; c++) {
+        blocked[r][c] = 1;
+      }
+    }
+  });
+
+  // BFS pathfinder: returns array of [col, row] grid points or null
+  function bfsPath(sc, sr, tc, tr) {
+    // Clamp to grid
+    sc = Math.max(0, Math.min(gCols-1, sc));
+    sr = Math.max(0, Math.min(gRows-1, sr));
+    tc = Math.max(0, Math.min(gCols-1, tc));
+    tr = Math.max(0, Math.min(gRows-1, tr));
+
+    if (sc === tc && sr === tr) return [[sc, sr]];
+
+    const dirs = [[0,1],[0,-1],[1,0],[-1,0]];
+    const visited = [];
+    for (let r = 0; r < gRows; r++) visited[r] = new Uint8Array(gCols);
+    const prev = [];
+    for (let r = 0; r < gRows; r++) { prev[r] = []; for (let c = 0; c < gCols; c++) prev[r][c] = null; }
+
+    const queue = [[sc, sr]];
+    visited[sr][sc] = 1;
+
+    while (queue.length) {
+      const [cc, cr] = queue.shift();
+      if (cc === tc && cr === tr) {
+        // Reconstruct path
+        const path = [];
+        let cur = [tc, tr];
+        while (cur) { path.unshift(cur); cur = prev[cur[1]][cur[0]]; }
+        return path;
+      }
+      for (const [dc, dr] of dirs) {
+        const nc = cc + dc, nr = cr + dr;
+        if (nc < 0 || nc >= gCols || nr < 0 || nr >= gRows) continue;
+        if (visited[nr][nc] || blocked[nr][nc]) continue;
+        visited[nr][nc] = 1;
+        prev[nr][nc] = [cc, cr];
+        queue.push([nc, nr]);
+      }
+    }
+    return null; // no path found
+  }
+
+  // Convert grid path to SVG path string with rounded corners
+  // exactSx/Sy and exactTx/Ty pin the start and end to precise node-edge coordinates
+  function gridPathToSVG(gridPts, exactSx, exactSy, exactTx, exactTy) {
+    if (!gridPts || gridPts.length < 2) return null;
+    // Convert grid coords to SVG coords (center of each cell)
+    let pts = gridPts.map(([c, r]) => [c * GRID + GRID/2, r * GRID + GRID/2]);
+    // Pin exact start and end so arrow begins/ends precisely at node edges
+    if (exactSx !== undefined) pts[0] = [exactSx, exactSy];
+    if (exactTx !== undefined) pts[pts.length - 1] = [exactTx, exactTy];
+
+    // Simplify: remove collinear points
+    const simplified = [pts[0]];
+    for (let i = 1; i < pts.length - 1; i++) {
+      const [ax, ay] = pts[i-1], [bx, by] = pts[i], [cx, cy] = pts[i+1];
+      const collinear = (ax === bx && bx === cx) || (ay === by && by === cy);
+      if (!collinear) simplified.push(pts[i]);
+    }
+    simplified.push(pts[pts.length - 1]);
+
+    if (simplified.length < 2) return null;
+
+    // Build path with rounded corners using quadratic beziers
+    const R = Math.min(6, GRID / 2 - 1);
+    let d = `M${simplified[0][0]} ${simplified[0][1]}`;
+
+    for (let i = 1; i < simplified.length; i++) {
+      const [x1, y1] = simplified[i-1];
+      const [x2, y2] = simplified[i];
+      if (i < simplified.length - 1) {
+        const [x3, y3] = simplified[i+1];
+        // Approach corner with a short line, then curve
+        const dx = x2 - x1, dy = y2 - y1;
+        const len = Math.sqrt(dx*dx + dy*dy);
+        const ux = dx/len, uy = dy/len;
+        d += ` L${x2 - ux*R} ${y2 - uy*R} Q${x2} ${y2} ${x2 + (x3-x2)/Math.max(1,Math.abs(x3-x2))*R} ${y2 + (y3-y2)/Math.max(1,Math.abs(y3-y2))*R}`;
+      } else {
+        d += ` L${x2} ${y2}`;
+      }
+    }
+    return d;
+  }
+
+  // Temporarily unblock source and target node cells so BFS can enter/exit them
+  function unblockNode(bbox) {
+    const c1 = Math.max(0, Math.floor(bbox.x1/GRID));
+    const c2 = Math.min(gCols-1, Math.ceil(bbox.x2/GRID));
+    const r1 = Math.max(0, Math.floor(bbox.y1/GRID));
+    const r2 = Math.min(gRows-1, Math.ceil(bbox.y2/GRID));
+    const cells = [];
+    for (let r = r1; r <= r2; r++) for (let c = c1; c <= c2; c++) { cells.push([r,c,blocked[r][c]]); blocked[r][c] = 0; }
+    return cells;
+  }
+  function reblock(cells) { cells.forEach(([r,c,v]) => blocked[r][c] = v); }
+
+  // Collect cross arrows
+  const crossArrowList = [];
+  nodes.forEach(n => {
+    (n.crossArrows||[]).forEach(targetId => {
+      const sp = layout[n.id], tp = layout[targetId];
+      const srcBox = nBoxes.find(b => b.id === n.id);
+      const tgtBox = nBoxes.find(b => b.id === targetId);
+      if (sp && tp && srcBox && tgtBox) crossArrowList.push({n, sp, tp, srcBox, tgtBox});
+    });
+  });
+
+  crossArrowList.forEach(({n, sp, tp, srcBox, tgtBox}) => {
+    // Compute center of each node
+    const srcCx = sp.x + offsetX + sp.w/2;
+    const srcCy = NODE_Y0 + sp.y + sp.h/2;
+    const tgtCx = tp.x + offsetX + tp.w/2;
+    const tgtCy = NODE_Y0 + tp.y + tp.h/2;
+
+    // Pick closest edge pair based on relative position of the two nodes
+    // Each node has 4 candidate exit/entry points; pick the pair with shortest straight-line distance
+    const srcEdges = [
+      {x: srcCx,            y: NODE_Y0+sp.y,         dir:'top'},
+      {x: srcCx,            y: NODE_Y0+sp.y+sp.h,    dir:'bottom'},
+      {x: sp.x+offsetX,     y: srcCy,                dir:'left'},
+      {x: sp.x+offsetX+sp.w,y: srcCy,                dir:'right'},
+    ];
+    const tgtEdges = [
+      {x: tgtCx,            y: NODE_Y0+tp.y,         dir:'top'},
+      {x: tgtCx,            y: NODE_Y0+tp.y+tp.h,    dir:'bottom'},
+      {x: tp.x+offsetX,     y: tgtCy,                dir:'left'},
+      {x: tp.x+offsetX+tp.w,y: tgtCy,                dir:'right'},
+    ];
+
+    // Find the pair with minimum distance, excluding same-direction pairs that would overlap
+    // (e.g. don't exit bottom and enter bottom if target is above source)
+    let bestDist = Infinity, bestSx=0, bestSy=0, bestTx=0, bestTy=0;
+    srcEdges.forEach(se => {
+      tgtEdges.forEach(te => {
+        // Skip if both edges point the same way and nodes are on opposite sides
+        // (avoids arrows that immediately double back)
+        const d = Math.hypot(se.x-te.x, se.y-te.y);
+        if(d < bestDist){
+          bestDist=d; bestSx=se.x; bestSy=se.y; bestTx=te.x; bestTy=te.y;
+        }
+      });
+    });
+
+    const sx = bestSx, sy = bestSy;
+    const tx = bestTx, ty = bestTy;
+
+    // Grid cells for source exit point and target entry point
+    const sc = Math.min(gCols-1, Math.ceil(sx / GRID));
+    const sr = Math.min(gRows-1, Math.round(sy / GRID));
+    const tc = Math.min(gCols-1, Math.ceil(tx / GRID));
+    const tr = Math.min(gRows-1, Math.round(ty / GRID));
+
+    // Temporarily unblock source and target so BFS can reach them
+    const srcCells = unblockNode(srcBox);
+    const tgtCells = unblockNode(tgtBox);
+
+    const gridPts = bfsPath(sc, sr, tc, tr);
+
+    reblock(srcCells);
+    reblock(tgtCells);
+
+    // Mark cells used by this path as slightly more costly for next arrows
+    // (simple: re-block them with a weaker value so future arrows prefer other routes)
+    if (gridPts) {
+      gridPts.forEach(([c,r]) => { if (!blocked[r][c]) blocked[r][c] = 1; });
+    }
+
+    const dimmed = filterTag && !nodeMatchesFilter(n);
+    const op = dimmed ? 0.08 : 0.8;
+
+    if (gridPts && gridPts.length >= 2) {
+      const d = gridPathToSVG(gridPts, sx, sy, tx, ty);
+      if (d) {
+        h += `<path d="${d}" fill="none" stroke="${strokeColor}" stroke-width="1.6"
+          stroke-dasharray="6 3" opacity="${op}"/>`;
+        // Recompute simplified points to find last segment direction
+        let sPts = gridPts.map(([c,r])=>[c*16+8, r*16+8]);
+        sPts[0] = [sx, sy];
+        sPts[sPts.length-1] = [tx, ty];
+        const simp = [sPts[0]];
+        for(let i=1;i<sPts.length-1;i++){
+          const [ax,ay]=sPts[i-1],[bx,by]=sPts[i],[cx,cy]=sPts[i+1];
+          if(!((ax===bx&&bx===cx)||(ay===by&&by===cy))) simp.push(sPts[i]);
+        }
+        simp.push(sPts[sPts.length-1]);
+        let prev = simp.length>=2 ? simp[simp.length-2] : simp[0];
+        // If prev===target (zero direction, happens when all points collinear), use source instead
+        if(prev[0]===tx && prev[1]===ty) prev = [sx, sy];
+        ah += arrowHead(prev[0], prev[1], tx, ty, strokeColor, op);
+        return;
+      }
+    }
+
+    // Fallback: simple arc above tree
+    const cpx = (sx + tx) / 2;
+    const cpy = NODE_Y0 - 30;
+    h += `<path d="M${sx} ${sy} Q${cpx} ${cpy} ${tx} ${ty}"
+      fill="none" stroke="${strokeColor}" stroke-width="1.6"
+      stroke-dasharray="6 3" opacity="${op}"/>`;
+    ah += arrowHead(cpx, cpy, tx, ty, strokeColor, op);
+  });
+
+  // ── Draw nodes ON TOP of arrows ──
+  nodes.forEach(n=>{
+    const p=layout[n.id]; if(!p) return;
+    const nx=p.x+offsetX, ny=NODE_Y0+p.y;
+    const sel=selected&&selected.id===n.id;
+    const dimmed=filterTag&&!nodeMatchesFilter(n);
+    const lit=filterTag&&nodeMatchesFilter(n);
+    const sw=sel?2:.8;
+    const op=dimmed?0.15:1;
+    const glow=lit?`filter:drop-shadow(0 0 6px ${strokeColor})`:'';
+    const label=n.label||'Unnamed';
+    // Compute line count for dynamic height
+    const charW2=12*0.62, maxC=Math.max(4,Math.floor((p.w-14)/charW2));
+    let lineN=1, curLine='';
+    label.split(' ').forEach(w=>{const t=curLine?curLine+' '+w:w;if(t.length<=maxC){curLine=t;}else{lineN++;curLine=w;}});
+    const count=sessionCountForNode(n.id);
+    const labelH=lineN*16, countH=count?16:0;
+    const nodeH=Math.max(p.h, labelH+countH+14);
+    const labelCY=ny+(count?nodeH/2-countH/2-1:nodeH/2);
+    const countCY=ny+nodeH-10;
+    h+=`<g class="node-g" onclick="clickUserNode('${layer}','${n.id}')" style="opacity:${op};${glow}">
+      <rect x="${nx}" y="${ny}" width="${p.w}" height="${nodeH}" rx="7"
+        fill="${fillColor}" stroke="${sel?strokeDark:strokeColor}" stroke-width="${sw}"/>
+      ${wrapText(label, nx+p.w/2, labelCY, p.w-14, 12, 500, strokeDark)}
+      ${count?`<text x="${nx+p.w/2}" y="${countCY}" text-anchor="middle" dominant-baseline="central"
+        style="font-size:10px;fill:${strokeColor};font-family:var(--font)">${count} session${count!==1?'s':''}</text>`:''}
+    </g>`;
+    // + child spawn button
+    if(!filterTag){
+      const bx=nx+p.w-14, by=ny-8;
+      h+=`<g class="node-g" onclick="spawnChildDirect('${layer}','${n.id}')">
+        <circle cx="${bx}" cy="${by}" r="9" fill="${fillColor}" stroke="${strokeColor}" stroke-width=".8"/>
+        <text x="${bx}" y="${by}" text-anchor="middle" dominant-baseline="central"
+          style="font-size:13px;fill:${strokeColor};font-family:var(--font)">+</text>
+      </g>`;
+    }
+  });
+
+  // + Add root node button
+  if(!filterTag){
+    const maxY2 = keys.length ? Math.max(...keys.map(k=>layout[k].y+layout[k].h)) : 0;
+    h+=`<g class="node-g" onclick="addRootNode('${layer}')">
+      <rect x="20" y="${NODE_Y0+maxY2+10}" width="120" height="28" rx="6"
+        fill="var(--bg2)" stroke="var(--border2)" stroke-width=".8" stroke-dasharray="4 3"/>
+      <text x="80" y="${NODE_Y0+maxY2+24}" text-anchor="middle" dominant-baseline="central"
+        style="font-size:11px;fill:var(--text3);font-family:var(--font)">+ Add root node</text>
+    </g>`;
+  }
+
+  // Draw all arrowheads on top of everything (including nodes)
+  h += ah;
+
+  svg.innerHTML = h;
+}
+
+function sectionHeaderSVG(label, W, MARGIN, y){
+  return `<text x="${W/2}" y="${y}" text-anchor="middle" style="font-size:10px;fill:var(--text3);font-family:var(--font);letter-spacing:.07em">${label}</text>
+  <line x1="${MARGIN}" y1="${y+6}" x2="${W/2-label.length*3.5-8}" y2="${y+6}" stroke="var(--border)" stroke-width=".5"/>
+  <line x1="${W/2+label.length*3.5+8}" y1="${y+6}" x2="${W-MARGIN}" y2="${y+6}" stroke="var(--border)" stroke-width=".5"/>`;
+}
+
+/* ══════════════════════════════════════════
+   CLICK HANDLERS
+══════════════════════════════════════════ */
+function clickPrinciple(id){
+  const p=appState.principles.find(x=>x.id===id); if(!p) return;
+  selected={type:'principle',id};
+  setFilter('principle',id);
+  openPanel(); cancelEditMode();
+  document.getElementById('d-title').textContent=p.label;
+  setBadge('Foundational Principle','var(--p-fill)','var(--p-text)','var(--p-stroke)');
+  showPCActions(); renderPrincipleRead(p);
+}
+
+function renderPrincipleRead(p){
+  show('blk-read-view');
+  show('blk-desc'); document.getElementById('d-desc').textContent=p.desc||'';
+  hide('blk-sub');
+  if(p.concepts&&p.concepts.length){
+    show('blk-concepts');
+    document.getElementById('d-concepts').innerHTML='<ul>'+p.concepts.map(c=>`<li><b>${c.t}:</b> ${c.b}</li>`).join('')+'</ul>';
+  } else { hide('blk-concepts'); }
+  hide('blk-prefs'); hide('blk-mistakes');
+  hideUserBlocks();
+}
+
+function clickComponent(id){
+  const gc=appState.components.find(x=>x.id===id); if(!gc) return;
+  selected={type:'component',id};
+  setFilter('component',id);
+  openPanel(); cancelEditMode();
+  document.getElementById('d-title').textContent=gc.label;
+  setBadge('Game Component','var(--gc-fill)','var(--gc-text)','var(--gc-stroke)');
+  showPCActions(); renderComponentRead(gc);
+}
+
+function renderComponentRead(gc){
+  show('blk-read-view');
+  show('blk-desc'); document.getElementById('d-desc').textContent=gc.desc||'';
+  if(gc.subs&&gc.subs.length){
+    show('blk-sub');
+    document.getElementById('d-sub').innerHTML='<ul>'+gc.subs.map(s=>`<li><b>${s.t}:</b> ${s.b}</li>`).join('')+'</ul>';
+  } else { hide('blk-sub'); }
+  if(gc.concepts&&gc.concepts.length){
+    show('blk-concepts');
+    document.getElementById('d-concepts').innerHTML='<ul>'+gc.concepts.map(c=>`<li><b>${c.t}:</b> ${c.b}</li>`).join('')+'</ul>';
+  } else { hide('blk-concepts'); }
+  if(gc.principles&&gc.principles.length){
+    show('blk-prefs');
+    document.getElementById('d-prefs').innerHTML=gc.principles.map(pid=>{
+      const p=appState.principles.find(x=>x.id===pid);
+      return p?`<span class="tag-chip p-chip" onclick="clickPrinciple('${pid}')">${p.label}</span>`:'';
+    }).join('');
+  } else { hide('blk-prefs'); }
+  hide('blk-mistakes');
+  hideUserBlocks();
+}
+
+function showPCActions(){
+  const el=document.getElementById('blk-pc-actions');
+  el.style.display='flex';
+}
+function hideUserBlocks(){
+  hide('blk-node-edit'); hide('blk-session-count'); hide('blk-notes'); hide('blk-add-conn'); hide('blk-add-child');
+}
+
+function clickUserNode(layer, id){
+  const nodes=getNodes(layer);
+  const node=nodes.find(n=>n.id===id); if(!node) return;
+  selected={type:layer,id};
+  // Auto-clear any active filter when navigating into a node
+  if(filterTag){ filterTag=null; }
+  renderTree();
+  openPanel();
+  document.getElementById('d-title').textContent=node.label||'Unnamed node';
+  const isGP=layer==='gameplan';
+  setBadge(isGP?'Gameplan':'Class Work', isGP?'#FAECE7':'#F3EDFB', isGP?'#993C1D':'#5C3A8A', isGP?'#D85A30':'#885AB7');
+  // Hide principle/component blocks
+  hide('blk-pc-actions'); hide('blk-read-view'); hide('blk-edit-view');
+  hide('blk-desc'); hide('blk-sub'); hide('blk-concepts'); hide('blk-mistakes');
+
+  // Show governing principles tags
+  const ptags=(node.tags&&node.tags.principles)||[];
+  const ctags=(node.tags&&node.tags.components)||[];
+  if(ptags.length||ctags.length){
+    show('blk-prefs');
+    document.getElementById('d-prefs').innerHTML=
+      ptags.map(pid=>{const p=appState.principles.find(x=>x.id===pid);return p?`<span class="tag-chip p-chip">${p.label}</span>`:''}).join('')+
+      ctags.map(cid=>{const gc=appState.components.find(x=>x.id===cid);return gc?`<span class="tag-chip gc-chip">${gc.label}</span>`:''}).join('');
+  } else { hide('blk-prefs'); }
+
+  // Edit block
+  show('blk-node-edit');
+  document.getElementById('node-name-input').value=node.label||'';
+  buildTagSelectors(node);
+
+  // Session count
+  const count=sessionCountForNode(id);
+  show('blk-session-count');
+  document.getElementById('d-session-count').textContent=count;
+
+  // Notes
+  show('blk-notes');
+  renderNodeNotes(node);
+
+  // Cross-arrow management
+  const _allOtherNodes=[...appState.gameplanNodes,...appState.classworkNodes].filter(n=>n.id!==id);
+  show('blk-add-conn');
+  renderCrossArrowList(node);
+  if(!_allOtherNodes.length) hide('blk-add-conn');
+
+  show('blk-add-child');
+}
+
+/* ══════════════════════════════════════════
+   TAG SELECTORS
+══════════════════════════════════════════ */
+function buildTagSelectors(node){
+  const ptags=(node.tags&&node.tags.principles)||[];
+  const ctags=(node.tags&&node.tags.components)||[];
+
+  const pgrid=document.getElementById('tag-principles');
+  pgrid.innerHTML=appState.principles.map(p=>{
+    const sel=ptags.includes(p.id);
+    return `<span class="tag-opt p-tag${sel?' selected':''}" data-id="${p.id}" onclick="this.classList.toggle('selected')">${p.label}</span>`;
+  }).join('');
+
+  const cgrid=document.getElementById('tag-components');
+  cgrid.innerHTML=appState.components.map(gc=>{
+    const sel=ctags.includes(gc.id);
+    return `<span class="tag-opt gc-tag${sel?' selected':''}" data-id="${gc.id}" onclick="this.classList.toggle('selected')">${gc.label}</span>`;
+  }).join('');
+}
+
+function toggleTag(el, type, id){
+  el.classList.toggle('selected');
+}
+
+function getSelectedTags(){
+  const principles=Array.from(document.querySelectorAll('#tag-principles .tag-opt.selected'))
+    .map(el=>el.dataset.id).filter(Boolean);
+  const components=Array.from(document.querySelectorAll('#tag-components .tag-opt.selected'))
+    .map(el=>el.dataset.id).filter(Boolean);
+  return {principles,components};
+}
+
+/* ══════════════════════════════════════════
+   NODE CRUD
+══════════════════════════════════════════ */
+function addRootNode(layer){
+  showModal('Add node',
+    `<div style="display:flex;flex-direction:column;gap:8px">
+      <div class="d-label" style="margin-bottom:2px">Node name</div>
+      <input class="text-input" id="modal-node-label" placeholder="e.g. DLR Guard" autofocus/>
+    </div>`,
+    [{label:'Cancel',action:closeModal},{label:'Add node',action:()=>{
+      const label=document.getElementById('modal-node-label')?.value?.trim();
+      if(!label) return;
+      const node={id:uid(),label,parentId:null,crossArrows:[],tags:{principles:[],components:[]},notes:[]};
+      getNodes(layer).push(node);
+      persist(); renderTree(); closeModal();
+    }}]
+  );
+  setTimeout(()=>document.getElementById('modal-node-label')?.focus(),80);
+}
+
+function spawnChild(){
+  if(!selected||(selected.type!=='gameplan'&&selected.type!=='classwork')) return;
+  spawnChildDirect(selected.type, selected.id);
+}
+function spawnChildDirect(layer, parentId){
+  showModal('Add child node',
+    `<div style="display:flex;flex-direction:column;gap:8px">
+      <div class="d-label" style="margin-bottom:2px">Node name</div>
+      <input class="text-input" id="modal-node-label" placeholder="e.g. Berimbolo entry" autofocus/>
+    </div>`,
+    [{label:'Cancel',action:closeModal},{label:'Add node',action:()=>{
+      const label=document.getElementById('modal-node-label')?.value?.trim();
+      if(!label) return;
+      const node={id:uid(),label,parentId,crossArrows:[],tags:{principles:[],components:[]},notes:[]};
+      getNodes(layer).push(node);
+      persist(); renderTree(); closeModal();
+    }}]
+  );
+  setTimeout(()=>document.getElementById('modal-node-label')?.focus(),80);
+}
+
+function saveNodeEdit(){
+  if(!selected||(selected.type!=='gameplan'&&selected.type!=='classwork')) return;
+  const nodes=getNodes(selected.type);
+  const node=nodes.find(n=>n.id===selected.id); if(!node) return;
+  node.label=document.getElementById('node-name-input').value||node.label;
+  node.tags=getSelectedTags();
+  persist(); renderTree();
+  document.getElementById('d-title').textContent=node.label;
+  showToast('Changes saved');
+}
+
+let _toastTimer=null;
+function showToast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;
+  el.classList.add('show');
+  if(_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(()=>el.classList.remove('show'),2000);
+}
+
+function deleteNode(){
+  if(!selected||(selected.type!=='gameplan'&&selected.type!=='classwork')) return;
+  const layer=selected.type;
+  const nodes=getNodes(layer);
+  const node=nodes.find(n=>n.id===selected.id);
+  if(!node) return;
+  showModal('Delete node?',
+    `<p style="font-size:12px;color:var(--text2);line-height:1.6">Delete "<b>${node.label||'this node'}</b>" and all its children? This cannot be undone.</p>`,
+    [{label:'Cancel',action:closeModal},{label:'Delete',action:()=>{
+      function collectDescendants(id){
+        const ids=[id];
+        nodes.forEach(n=>{ if(n.parentId===id) ids.push(...collectDescendants(n.id)); });
+        return ids;
+      }
+      const toDelete=new Set(collectDescendants(selected.id));
+      const remaining=nodes.filter(n=>!toDelete.has(n.id));
+      remaining.forEach(n=>{ n.crossArrows=(n.crossArrows||[]).filter(id=>!toDelete.has(id)); });
+      if(layer==='gameplan') appState.gameplanNodes=remaining;
+      else appState.classworkNodes=remaining;
+      selected=null; closePanel(); persist(); renderTree(); closeModal();
+    }}]
+  );
+}
+
+function renderCrossArrowList(node){
+  const allOther=[...appState.gameplanNodes,...appState.classworkNodes].filter(n=>n.id!==node.id);
+  const arrows=node.crossArrows||[];
+
+  // Existing arrows list
+  const list=document.getElementById('cross-arrows-list');
+  if(!arrows.length){
+    list.innerHTML='<div style="font-size:12px;color:var(--text3);margin-bottom:4px">No cross-references yet.</div>';
+  } else {
+    list.innerHTML=arrows.map(targetId=>{
+      const target=[...appState.gameplanNodes,...appState.classworkNodes].find(n=>n.id===targetId);
+      const label=target?target.label:'Unknown node';
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);margin-bottom:4px;font-size:12px">
+        <span style="color:var(--text2)">→ ${escHtml(label)}</span>
+        <span style="cursor:pointer;color:#c0392b;font-size:11px;flex-shrink:0;margin-left:8px" onclick="removeCrossArrow('${node.id}','${targetId}')">Remove</span>
+      </div>`;
+    }).join('');
+  }
+
+  // Populate dropdown with nodes not already connected
+  const sel=document.getElementById('conn-target-sel');
+  const available=allOther.filter(n=>!arrows.includes(n.id));
+  if(!available.length){
+    sel.innerHTML='<option disabled>All nodes already connected</option>';
+  } else {
+    sel.innerHTML=available.map(n=>{
+      const layer=appState.gameplanNodes.find(x=>x.id===n.id)?'Gameplan':'Classwork';
+      return `<option value="${n.id}">${escHtml(n.label||'Unnamed')} (${layer})</option>`;
+    }).join('');
+  }
+}
+
+function addCrossArrow(){
+  if(!selected||(selected.type!=='gameplan'&&selected.type!=='classwork')) return;
+  const sel=document.getElementById('conn-target-sel');
+  const targetId=sel?.value;
+  if(!targetId) return;
+  const nodes=getNodes(selected.type);
+  const node=nodes.find(n=>n.id===selected.id); if(!node) return;
+  if(!node.crossArrows) node.crossArrows=[];
+  if(!node.crossArrows.includes(targetId)){
+    node.crossArrows.push(targetId);
+    persist(); renderTree();
+    renderCrossArrowList(node);
+    showToast('Arrow added');
+  }
+}
+
+function removeCrossArrow(nodeId, targetId){
+  const node=findNodeById(nodeId); if(!node) return;
+  node.crossArrows=(node.crossArrows||[]).filter(id=>id!==targetId);
+  persist(); renderTree();
+  renderCrossArrowList(node);
+  showToast('Arrow removed');
+}
+
+/* ══════════════════════════════════════════
+   NOTES (per node)
+══════════════════════════════════════════ */
+function saveNote(){
+  if(!selected||(selected.type!=='gameplan'&&selected.type!=='classwork')) return;
+  const val=document.getElementById('note-input').value.trim(); if(!val) return;
+  const nodes=getNodes(selected.type);
+  const node=nodes.find(n=>n.id===selected.id); if(!node) return;
+  if(!node.notes) node.notes=[];
+  const ts=new Date().toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  node.notes.push({ts,text:val});
+  persist();
+  document.getElementById('note-input').value='';
+  renderNodeNotes(node);
+  showToast('Note saved');
+}
+
+function renderNodeNotes(node){
+  const c=document.getElementById('d-notes-list');
+  const ns=node.notes||[];
+  if(!ns.length){
+    c.innerHTML='<div style="font-size:12px;color:var(--text3)">No notes yet.</div>';
+    return;
+  }
+  // Render newest first with inline edit support
+  c.innerHTML=[...ns].map((n,fwdIdx)=>{
+    // fwdIdx is index in original array (newest-last), we iterate reversed below
+    return null;
+  });
+  const reversed=[...ns.entries()]; // [[origIdx, note], ...] — oldest first
+  c.innerHTML=reversed.map(([origIdx,n])=>`
+    <div class="jentry" id="note-entry-${origIdx}">
+      <div class="jts" id="note-ts-${origIdx}">${n.ts}</div>
+      <div id="note-read-${origIdx}" style="font-size:12px;color:var(--text);margin-top:2px;white-space:pre-wrap">${escHtml(n.text)}</div>
+      <textarea id="note-edit-${origIdx}" class="note-box" style="display:none;margin-top:4px;min-height:100px">${escHtml(n.text)}</textarea>
+      <div style="display:flex;gap:6px;margin-top:5px">
+        <span id="note-btn-edit-${origIdx}" style="font-size:10px;color:var(--text3);cursor:pointer" onclick="startNoteEdit('${node.id}',${origIdx})">Edit</span>
+        <span style="font-size:10px;color:var(--text3)">·</span>
+        <span style="font-size:10px;color:#c0392b;cursor:pointer" onclick="deleteNote('${node.id}',${origIdx})">Delete</span>
+        <span id="note-btn-save-${origIdx}" style="font-size:10px;color:var(--focus-text);cursor:pointer;display:none" onclick="saveNoteEdit('${node.id}',${origIdx})">Save</span>
+        <span id="note-btn-cancel-${origIdx}" style="font-size:10px;color:var(--text3);cursor:pointer;display:none" onclick="cancelNoteEdit('${node.id}',${origIdx})">Cancel</span>
+      </div>
+    </div>`).join('');
+}
+
+function escHtml(str){
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function startNoteEdit(nodeId, idx){
+  const readEl=document.getElementById(`note-read-${idx}`);
+  const editEl=document.getElementById(`note-edit-${idx}`);
+  const btnEdit=document.getElementById(`note-btn-edit-${idx}`);
+  const btnSave=document.getElementById(`note-btn-save-${idx}`);
+  const btnCancel=document.getElementById(`note-btn-cancel-${idx}`);
+  if(!readEl||!editEl) return;
+  readEl.style.display='none';
+  editEl.style.display='block';
+  // Auto-size to content so the box is never too small
+  editEl.style.height='auto';
+  editEl.style.height=Math.max(100, editEl.scrollHeight)+'px';
+  editEl.focus();
+  if(btnEdit) btnEdit.style.display='none';
+  if(btnSave) btnSave.style.display='';
+  if(btnCancel) btnCancel.style.display='';
+}
+
+function cancelNoteEdit(nodeId, idx){
+  const node=findNodeById(nodeId);
+  if(!node) return;
+  renderNodeNotes(node);
+}
+
+function saveNoteEdit(nodeId, idx){
+  const node=findNodeById(nodeId);
+  if(!node) return;
+  const editEl=document.getElementById(`note-edit-${idx}`);
+  if(!editEl) return;
+  const newText=editEl.value.trim();
+  if(!newText){ deleteNote(nodeId,idx); return; }
+  node.notes[idx].text=newText;
+  node.notes[idx].ts=node.notes[idx].ts+' (edited)';
+  persist();
+  renderNodeNotes(node);
+  showToast('Note updated');
+}
+
+function deleteNote(nodeId, idx){
+  const node=findNodeById(nodeId);
+  if(!node) return;
+  node.notes.splice(idx,1);
+  persist();
+  renderNodeNotes(node);
+  showToast('Note deleted');
+}
+
+function findNodeById(id){
+  return [...appState.gameplanNodes,...appState.classworkNodes].find(n=>n.id===id);
+}
+
+/* ══════════════════════════════════════════
+   SESSIONS / JOURNAL
+══════════════════════════════════════════ */
+function openNewSessionModal(){
+  const allNodes=[...appState.gameplanNodes,...appState.classworkNodes];
+  const dateStr=new Date().toISOString().slice(0,10);
+  const tagsHtml=allNodes.length
+    ?'<div class="tag-grid" id="modal-node-tags">'+
+      allNodes.map(n=>`<span class="tag-opt plain-tag" onclick="this.classList.toggle('selected')" data-id="${n.id}">${n.label||'Unnamed'} (${appState.gameplanNodes.find(x=>x.id===n.id)?'GP':'CW'})</span>`).join('')+
+      '</div>'
+    :'<p style="font-size:12px;color:var(--text3)">Add some gameplan or classwork nodes first to tag them.</p>';
+  showModal('Log session',
+    `<div style="display:flex;flex-direction:column;gap:10px">
+      <div>
+        <div class="d-label" style="margin-bottom:4px">Date</div>
+        <input type="date" id="modal-date" class="text-input" value="${dateStr}"/>
+      </div>
+      <div>
+        <div class="d-label" style="margin-bottom:4px">Notes</div>
+        <textarea class="note-box" id="modal-notes" placeholder="What did you work on? What clicked?" style="min-height:80px"></textarea>
+      </div>
+      <div>
+        <div class="d-label" style="margin-bottom:4px">Tag nodes worked</div>
+        ${tagsHtml}
+      </div>
+    </div>`,
+    [{label:'Cancel',action:closeModal},{label:'Save session',action:saveSession}]
+  );
+}
+
+function saveSession(){
+  const date=document.getElementById('modal-date')?.value||new Date().toISOString().slice(0,10);
+  const notes=document.getElementById('modal-notes')?.value?.trim()||'';
+  const tagged=Array.from(document.querySelectorAll('#modal-node-tags .tag-opt.selected')).map(el=>el.dataset.id);
+  const session={id:uid(),date,notes,taggedNodes:tagged};
+  appState.sessions.push(session);
+  persist(); closeModal(); renderTree();
+  if(currentView==='journal') renderJournal();
+}
+
+function renderJournal(){
+  const c=document.getElementById('all-journal');
+  if(!appState.sessions.length){
+    c.innerHTML='<div style="font-size:13px;color:var(--text3)">No sessions logged yet. Hit "Log session" to add one.</div>';
+    return;
+  }
+  const allNodes=[...appState.gameplanNodes,...appState.classworkNodes];
+  const byDay={};
+  appState.sessions.forEach(s=>{
+    if(!byDay[s.date]) byDay[s.date]=[];
+    byDay[s.date].push(s);
+  });
+  const days=Object.keys(byDay).sort((a,b)=>b.localeCompare(a));
+  c.innerHTML=days.map(d=>{
+    const dayLabel=new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+    return `<div class="jv-day">
+      <div class="jv-day-header">${dayLabel}</div>
+      ${byDay[d].map(s=>renderSessionCard(s,allNodes)).join('')}
+    </div>`;
+  }).join('');
+}
+
+function renderSessionCard(s,allNodes){
+  if(!allNodes) allNodes=[...appState.gameplanNodes,...appState.classworkNodes];
+  const tags=s.taggedNodes.map(id=>{
+    const n=allNodes.find(x=>x.id===id);
+    return n?`<span class="session-tag">${escHtml(n.label||'?')}</span>`:'';
+  }).join('');
+  const nodeTagOpts=allNodes.map(n=>{
+    const sel=s.taggedNodes.includes(n.id);
+    const layer=appState.gameplanNodes.find(x=>x.id===n.id)?'GP':'CW';
+    return `<span class="tag-opt plain-tag${sel?' selected':''}" data-id="${n.id}" onclick="this.classList.toggle('selected')">${escHtml(n.label||'Unnamed')} (${layer})</span>`;
+  }).join('');
+  return `<div class="session-card" id="sc-${s.id}">
+    <div id="sc-read-${s.id}">
+      <div style="font-size:10px;color:var(--text3);margin-bottom:4px">${s.date}</div>
+      ${s.notes?`<div style="font-size:12px;color:var(--text);margin-bottom:${tags?'6px':'0'};white-space:pre-wrap">${escHtml(s.notes)}</div>`:''}
+      ${tags?`<div class="session-tags" style="margin-bottom:4px">${tags}</div>`:''}
+      <div style="margin-top:4px;font-size:10px;color:var(--text3);display:flex;gap:8px">
+        <span>${s.taggedNodes.length} node${s.taggedNodes.length!==1?'s':''} tagged</span>
+        <span style="cursor:pointer;color:var(--focus-text)" onclick="startSessionEdit('${s.id}')">Edit</span>
+        <span style="cursor:pointer;color:#c0392b;margin-left:auto" onclick="deleteSession('${s.id}')">Delete</span>
+      </div>
+    </div>
+    <div id="sc-edit-${s.id}" style="display:none;flex-direction:column;gap:8px">
+      <div>
+        <div class="d-label" style="margin-bottom:3px">Date</div>
+        <input type="date" class="text-input" id="sc-date-${s.id}" value="${s.date}"/>
+      </div>
+      <div>
+        <div class="d-label" style="margin-bottom:3px">Notes</div>
+        <textarea class="note-box" id="sc-notes-${s.id}" style="min-height:60px">${escHtml(s.notes||'')}</textarea>
+      </div>
+      <div>
+        <div class="d-label" style="margin-bottom:4px">Tagged nodes</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px" id="sc-tags-${s.id}">${nodeTagOpts}</div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="action-btn full" onclick="saveSessionEdit('${s.id}')">Save</button>
+        <button class="action-btn full" onclick="cancelSessionEdit('${s.id}')">Cancel</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function startSessionEdit(id){
+  const readEl=document.getElementById(`sc-read-${id}`);
+  const editEl=document.getElementById(`sc-edit-${id}`);
+  if(!readEl||!editEl) return;
+  readEl.style.display='none';
+  editEl.style.display='flex';
+}
+
+function cancelSessionEdit(id){
+  const readEl=document.getElementById(`sc-read-${id}`);
+  const editEl=document.getElementById(`sc-edit-${id}`);
+  if(!readEl||!editEl) return;
+  editEl.style.display='none';
+  readEl.style.display='';
+}
+
+function saveSessionEdit(id){
+  const s=appState.sessions.find(x=>x.id===id);
+  if(!s) return;
+  const dateEl=document.getElementById(`sc-date-${id}`);
+  const notesEl=document.getElementById(`sc-notes-${id}`);
+  const tagEls=document.querySelectorAll(`#sc-tags-${id} .tag-opt.selected`);
+  if(dateEl) s.date=dateEl.value||s.date;
+  if(notesEl) s.notes=notesEl.value.trim();
+  s.taggedNodes=Array.from(tagEls).map(el=>el.dataset.id).filter(Boolean);
+  persist(); renderJournal(); renderTree();
+  showToast('Session updated');
+}
+
+function deleteSession(id){
+  showModal('Delete session?',
+    `<p style="font-size:12px;color:var(--text2)">Remove this session log? This cannot be undone.</p>`,
+    [{label:'Cancel',action:closeModal},{label:'Delete',action:()=>{
+      appState.sessions=appState.sessions.filter(s=>s.id!==id);
+      persist(); closeModal(); renderJournal(); renderTree();
+    }}]
+  );
+}
+
+/* ══════════════════════════════════════════
+   PANEL HELPERS
+══════════════════════════════════════════ */
+function openPanel(){ document.getElementById('right-panel').classList.remove('hidden'); }
+function closePanel(){ _editMode=false; document.getElementById('right-panel').classList.add('hidden'); selected=null; renderTree(); }
+function show(id){ document.getElementById(id).style.display=''; }
+function hide(id){ document.getElementById(id).style.display='none'; }
+function setBadge(text,bg,color,border){
+  const b=document.getElementById('d-badge');
+  b.textContent=text; b.style.background=bg; b.style.color=color; b.style.borderColor=border;
+}
+
+/* ══════════════════════════════════════════
+   PRINCIPLE / COMPONENT EDIT MODE
+══════════════════════════════════════════ */
+let _editMode = false;
+
+function toggleEditMode(){
+  _editMode ? cancelEditMode() : enterEditMode();
+}
+
+function enterEditMode(){
+  _editMode = true;
+  document.getElementById('btn-edit-toggle').textContent = 'Cancel edit';
+  hide('blk-read-view');
+  const ev = document.getElementById('blk-edit-view');
+  ev.style.display='flex';
+
+  if(!selected) return;
+  const isP = selected.type==='principle';
+  const item = isP
+    ? appState.principles.find(x=>x.id===selected.id)
+    : appState.components.find(x=>x.id===selected.id);
+  if(!item) return;
+
+  document.getElementById('edit-label').value = item.label||'';
+  document.getElementById('edit-sublabel').value = item.sub||'';
+  document.getElementById('edit-desc').value = item.desc||'';
+
+  // Items: principles use 'concepts', components use both 'subs' and 'concepts'
+  const itemsLabel = document.getElementById('edit-items-label');
+  const itemsList = document.getElementById('edit-items-list');
+  if(isP){
+    itemsLabel.textContent = 'Concepts (title : body)';
+    renderEditItems(item.concepts||[], 'concepts');
+    hide('edit-gc-principles');
+  } else {
+    itemsLabel.textContent = 'Sub-components (title : body)';
+    renderEditItems(item.subs||[], 'subs');
+    // Also show governing principles selector
+    const gcpDiv = document.getElementById('edit-gc-principles');
+    gcpDiv.style.display='';
+    const grid = document.getElementById('edit-gc-prefs-grid');
+    const currentPrefs = item.principles||[];
+    grid.innerHTML = appState.principles.map(p=>
+      `<span class="tag-opt p-tag${currentPrefs.includes(p.id)?' selected':''}" onclick="this.classList.toggle('selected')" data-pid="${p.id}">${p.label}</span>`
+    ).join('');
+  }
+}
+
+function renderEditItems(items, mode){
+  const list = document.getElementById('edit-items-list');
+  list._mode = mode;
+  list.innerHTML = items.map((item,i)=>`
+    <div style="border:0.5px solid var(--border);border-radius:var(--radius);padding:8px;margin-bottom:6px;display:flex;flex-direction:column;gap:5px">
+      <input class="text-input" data-field="t" data-i="${i}" value="${(item.t||'').replace(/"/g,'&quot;')}" placeholder="Title"/>
+      <textarea class="note-box" data-field="b" data-i="${i}" style="min-height:50px" placeholder="Body">${item.b||''}</textarea>
+      <button class="action-btn danger" style="font-size:11px;padding:2px 6px;align-self:flex-end" onclick="removeEditItem(${i})">Remove</button>
+    </div>`).join('');
+}
+
+function addEditItem(){
+  const list = document.getElementById('edit-items-list');
+  const mode = list._mode||'concepts';
+  const item = selected && selected.type==='principle'
+    ? appState.principles.find(x=>x.id===selected.id)
+    : appState.components.find(x=>x.id===selected.id);
+  if(!item) return;
+  const arr = item[mode]||(item[mode]=[]);
+  arr.push({t:'',b:''});
+  renderEditItems(arr, mode);
+}
+
+function removeEditItem(i){
+  const list = document.getElementById('edit-items-list');
+  const mode = list._mode||'concepts';
+  const item = selected && selected.type==='principle'
+    ? appState.principles.find(x=>x.id===selected.id)
+    : appState.components.find(x=>x.id===selected.id);
+  if(!item) return;
+  const arr = item[mode]||[];
+  arr.splice(i,1);
+  renderEditItems(arr, mode);
+}
+
+function collectEditItems(){
+  const list = document.getElementById('edit-items-list');
+  const inputs = list.querySelectorAll('[data-field]');
+  const map = {};
+  inputs.forEach(el=>{
+    const i = el.dataset.i;
+    if(!map[i]) map[i]={t:'',b:''};
+    map[i][el.dataset.field] = el.value.trim();
+  });
+  return Object.values(map).filter(x=>x.t||x.b);
+}
+
+function saveEditPrincipleOrComponent(){
+  if(!selected) return;
+  const isP = selected.type==='principle';
+  const arr = isP ? appState.principles : appState.components;
+  const item = arr.find(x=>x.id===selected.id);
+  if(!item) return;
+
+  item.label = document.getElementById('edit-label').value.trim()||item.label;
+  item.sub   = document.getElementById('edit-sublabel').value.trim();
+  item.desc  = document.getElementById('edit-desc').value.trim();
+
+  const list = document.getElementById('edit-items-list');
+  const mode = list._mode||'concepts';
+  item[mode] = collectEditItems();
+
+  if(!isP){
+    // Save governing principles tags
+    const selTags = Array.from(document.querySelectorAll('#edit-gc-prefs-grid .tag-opt.selected'))
+      .map(el=>el.dataset.pid).filter(Boolean);
+    item.principles = selTags;
+    // If component has a concepts section separate from subs, preserve it
+  }
+
+  persist();
+  renderTree();
+  // Update title in panel
+  document.getElementById('d-title').textContent = item.label;
+  cancelEditMode();
+  // Re-render read view with updated data
+  if(isP) renderPrincipleRead(item);
+  else renderComponentRead(item);
+  showToast('Changes saved');
+}
+
+function cancelEditMode(){
+  _editMode = false;
+  const btn = document.getElementById('btn-edit-toggle');
+  if(btn) btn.textContent = 'Edit';
+  hide('blk-edit-view');
+  show('blk-read-view');
+}
+
+function deletePrincipleOrComponent(){
+  if(!selected) return;
+  const isP = selected.type==='principle';
+  const arr = isP ? appState.principles : appState.components;
+  const item = arr.find(x=>x.id===selected.id);
+  if(!item) return;
+  showModal(`Delete "${item.label}"?`,
+    `<p style="font-size:12px;color:var(--text2);line-height:1.6">This will remove it from all tag selectors and gameplan/classwork node tags. This cannot be undone.</p>`,
+    [{label:'Cancel',action:closeModal},{label:'Delete',action:()=>{
+      const id = selected.id;
+      if(isP){
+        appState.principles = appState.principles.filter(x=>x.id!==id);
+        // Remove from component principle tags
+        appState.components.forEach(c=>{ c.principles=(c.principles||[]).filter(p=>p!==id); });
+        // Remove from gameplan/classwork node tags
+        [...appState.gameplanNodes,...appState.classworkNodes].forEach(n=>{
+          if(n.tags) n.tags.principles=(n.tags.principles||[]).filter(p=>p!==id);
+        });
+      } else {
+        appState.components = appState.components.filter(x=>x.id!==id);
+        [...appState.gameplanNodes,...appState.classworkNodes].forEach(n=>{
+          if(n.tags) n.tags.components=(n.tags.components||[]).filter(c=>c!==id);
+        });
+      }
+      selected=null; closePanel(); persist(); renderTree(); closeModal();
+    }}]
+  );
+}
+
+function addNewPrinciple(){
+  showModal('Add principle',
+    `<div style="display:flex;flex-direction:column;gap:8px">
+      <div class="d-label" style="margin-bottom:2px">Label</div>
+      <input class="text-input" id="modal-new-label" placeholder="e.g. Timing" autofocus/>
+      <div class="d-label" style="margin-bottom:2px">Sub-label</div>
+      <input class="text-input" id="modal-new-sub" placeholder="e.g. Acting at the right moment"/>
+    </div>`,
+    [{label:'Cancel',action:closeModal},{label:'Add',action:()=>{
+      const label = document.getElementById('modal-new-label')?.value?.trim();
+      if(!label) return;
+      const sub = document.getElementById('modal-new-sub')?.value?.trim()||'';
+      const p = {id:uid(), label, sub, desc:'', concepts:[]};
+      appState.principles.push(p);
+      persist(); renderTree(); closeModal();
+      // Open the new node for editing immediately
+      setTimeout(()=>{ clickPrinciple(p.id); setTimeout(enterEditMode,50); },50);
+    }}]
+  );
+  setTimeout(()=>document.getElementById('modal-new-label')?.focus(),80);
+}
+
+function addNewComponent(){
+  showModal('Add game component',
+    `<div style="display:flex;flex-direction:column;gap:8px">
+      <div class="d-label" style="margin-bottom:2px">Label</div>
+      <input class="text-input" id="modal-new-label" placeholder="e.g. Turtle Position" autofocus/>
+      <div class="d-label" style="margin-bottom:2px">Sub-label</div>
+      <input class="text-input" id="modal-new-sub" placeholder="e.g. Defensive ball position"/>
+    </div>`,
+    [{label:'Cancel',action:closeModal},{label:'Add',action:()=>{
+      const label = document.getElementById('modal-new-label')?.value?.trim();
+      if(!label) return;
+      const sub = document.getElementById('modal-new-sub')?.value?.trim()||'';
+      const gc = {id:uid(), label, sub, desc:'', subs:[], concepts:[], principles:[]};
+      appState.components.push(gc);
+      persist(); renderTree(); closeModal();
+      setTimeout(()=>{ clickComponent(gc.id); setTimeout(enterEditMode,50); },50);
+    }}]
+  );
+  setTimeout(()=>document.getElementById('modal-new-label')?.focus(),80);
+}
+
+/* ══════════════════════════════════════════
+   VIEW SWITCHING
+══════════════════════════════════════════ */
+function showView(v){
+  currentView=v;
+  document.getElementById('map-view').style.display=v==='map'?'':'none';
+  document.getElementById('journal-view').style.display=v==='journal'?'':'none';
+  document.getElementById('btn-map').classList.toggle('active',v==='map');
+  document.getElementById('btn-journal').classList.toggle('active',v==='journal');
+  if(v==='journal') renderJournal();
+}
+
+/* ══════════════════════════════════════════
+   AUTH
+══════════════════════════════════════════ */
+function setAuthMsg(msg, isErr=false){
+  const el = document.getElementById('auth-msg');
+  el.textContent = msg;
+  el.className = isErr ? 'err' : 'ok';
+}
+
+async function authSignIn(){
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  if(!email||!password){ setAuthMsg('Please enter email and password.', true); return; }
+  setAuthMsg('Signing in…');
+  try{
+    const {data, error} = await sb.auth.signInWithPassword({email, password});
+    if(error){ setAuthMsg(error.message, true); }
+    else if(!data.session){ setAuthMsg('Sign in failed — please try again.', true); }
+  }catch(e){
+    setAuthMsg('Connection error: ' + e.message, true);
+  }
+}
+
+async function authSignUp(){
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  if(!email||!password){ setAuthMsg('Please enter email and password.', true); return; }
+  if(password.length < 6){ setAuthMsg('Password must be at least 6 characters.', true); return; }
+  setAuthMsg('Creating account…');
+  const {error} = await sb.auth.signUp({email, password});
+  if(error){ setAuthMsg(error.message, true); }
+  else { setAuthMsg('Account created! Check your email to confirm, then sign in.'); }
+}
+
+async function authResetPassword(){
+  const email = document.getElementById('auth-email').value.trim();
+  if(!email){ setAuthMsg('Enter your email address above first.', true); return; }
+  setAuthMsg('Sending reset email…');
+  const {error} = await sb.auth.resetPasswordForEmail(email);
+  if(error){ setAuthMsg(error.message, true); }
+  else { setAuthMsg('Password reset email sent — check your inbox.'); }
+}
+
+async function authSignOut(){
+  await sb.auth.signOut();
+  appState = {schemaVersion:SCHEMA_VERSION, gameplanNodes:[], classworkNodes:[], sessions:[], principles:[], components:[]};
+  try{ localStorage.removeItem(LS_KEY); }catch(e){}
+  document.getElementById('user-email-display').textContent = '';
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('auth-email').value = '';
+  document.getElementById('auth-password').value = '';
+  setAuthMsg('');
+}
+
+/* ══════════════════════════════════════════
+   INIT
+══════════════════════════════════════════ */
+async function init(){
+  // Seed defaults so map renders something while we check auth
+  seedDefaults();
+  renderTree();
+
+  // Listen for auth state changes
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if(session && session.user){
+      document.getElementById('auth-screen').style.display = 'none';
+      document.getElementById('user-email-display').textContent = session.user.email;
+      // Reset appState before loading so we don't merge stale data
+      appState = {schemaVersion:SCHEMA_VERSION, gameplanNodes:[], classworkNodes:[], sessions:[], principles:[], components:[]};
+      await loadState();
+      renderTree();
+    } else {
+      document.getElementById('auth-screen').style.display = 'flex';
+      // Reset to empty state
+      appState = {schemaVersion:SCHEMA_VERSION, gameplanNodes:[], classworkNodes:[], sessions:[], principles:[], components:[]};
+      seedDefaults();
+      renderTree();
+    }
+  });
+}
+
+init();
+</script>
+</body>
+</html>
+
   :root{
     --bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;
     --border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.2);
