@@ -761,8 +761,34 @@ function uid(){ return 'n'+Date.now()+Math.random().toString(36).slice(2,6); }
 function isUserSection(type){ return !!(appState.sections||[]).find(s=>s.id===type); }
 function getNodes(sectionId){ const sec=(appState.sections||[]).find(s=>s.id===sectionId); return sec?sec.nodes:[]; }
 
+function isLeafNode(nodeId, nodes){
+  return !nodes.some(n=>n.parentId===nodeId);
+}
+
+function getAncestors(nodeId, nodes){
+  const ancestors=[];
+  let current=nodes.find(n=>n.id===nodeId);
+  while(current&&current.parentId){
+    const parent=nodes.find(n=>n.id===current.parentId);
+    if(!parent) break;
+    ancestors.push(parent.id);
+    current=parent;
+  }
+  return ancestors;
+}
+
+function getAllDescendants(nodeId, nodes){
+  const children=nodes.filter(n=>n.parentId===nodeId).map(n=>n.id);
+  return children.reduce((acc,cid)=>[...acc,...getAllDescendants(cid,nodes)],[...children]);
+}
+
 function sessionCountForNode(nodeId){
-  return appState.sessions.filter(s=>(s.taggedNodes||[]).includes(nodeId)).length;
+  // Count sessions that tagged this node directly OR tagged any of its descendants
+  const sec=getSectionForNode(nodeId);
+  const nodes=sec?sec.nodes:getAllNodes();
+  const descendants=new Set(getAllDescendants(nodeId,nodes));
+  descendants.add(nodeId);
+  return appState.sessions.filter(s=>(s.taggedNodes||[]).some(id=>descendants.has(id))).length;
 }
 
 /* ══════════════════════════════════════════
@@ -1974,14 +2000,46 @@ function findNodeById(id){
 /* ══════════════════════════════════════════
    SESSIONS / JOURNAL
 ══════════════════════════════════════════ */
-function openNewSessionModal(){
+function buildNodeTagGrid(selectedIds=[], gridId='modal-node-tags'){
   const allNodes=getAllNodes();
+  if(!allNodes.length) return '<p style="font-size:12px;color:var(--text3)">Add some nodes first to tag them.</p>';
+
+  const leafNodes=allNodes.filter(n=>isLeafNode(n.id,getAllNodes()));
+  const nonLeafNodes=allNodes.filter(n=>!isLeafNode(n.id,getAllNodes()));
+
+  const makeTag=(n,isHidden=false)=>{
+    const sec=getSectionForNode(n.id);
+    const secLabel=sec?sec.label.slice(0,8):'?';
+    const sel=selectedIds.includes(n.id);
+    return `<span class="tag-opt plain-tag${sel?' selected':''}${isHidden?' all-node-tag':''}"
+      style="${isHidden?'display:none':''}"
+      data-id="${n.id}"
+      onclick="this.classList.toggle('selected')">
+      ${escHtml(n.label||'Unnamed')} <span style="opacity:.5;font-size:10px">(${secLabel})</span>
+    </span>`;
+  };
+
+  return `<div class="tag-grid" id="${gridId}">
+    ${leafNodes.map(n=>makeTag(n,false)).join('')}
+    ${nonLeafNodes.map(n=>makeTag(n,true)).join('')}
+  </div>
+  ${nonLeafNodes.length?`<div style="margin-top:6px">
+    <span id="toggle-all-nodes" style="font-size:11px;color:var(--focus-text);cursor:pointer"
+      onclick="toggleAllNodes(this)">Show all nodes (${nonLeafNodes.length} parent nodes hidden)</span>
+  </div>`:''}`;
+}
+
+function toggleAllNodes(el){
+  const hidden=document.querySelectorAll('.all-node-tag');
+  const isHidden=hidden[0]&&hidden[0].style.display==='none';
+  hidden.forEach(t=>t.style.display=isHidden?'':'none');
+  el.textContent=isHidden
+    ?`Show leaf nodes only`
+    :`Show all nodes (${hidden.length} parent nodes hidden)`;
+}
+
+function openNewSessionModal(){
   const dateStr=new Date().toISOString().slice(0,10);
-  const tagsHtml=allNodes.length
-    ?'<div class="tag-grid" id="modal-node-tags">'+
-      allNodes.map(n=>{const s4=getSectionForNode(n.id); return `<span class="tag-opt plain-tag" onclick="this.classList.toggle('selected')" data-id="${n.id}">${n.label||'Unnamed'} (${s4?s4.label.slice(0,8):'?'})</span>`;}).join('')+
-      '</div>'
-    :'<p style="font-size:12px;color:var(--text3)">Add some gameplan or classwork nodes first to tag them.</p>';
   showModal('Log session',
     `<div style="display:flex;flex-direction:column;gap:10px">
       <div>
@@ -1993,8 +2051,8 @@ function openNewSessionModal(){
         <textarea class="note-box" id="modal-notes" placeholder="What did you work on? What clicked?" style="min-height:80px"></textarea>
       </div>
       <div>
-        <div class="d-label" style="margin-bottom:4px">Tag nodes worked</div>
-        ${tagsHtml}
+        <div class="d-label" style="margin-bottom:4px">Tag nodes worked <span style="font-size:10px;opacity:.6">(leaf nodes shown — ancestors auto-tagged)</span></div>
+        ${buildNodeTagGrid([])}
       </div>
     </div>`,
     [{label:'Cancel',action:closeModal},{label:'Save session',action:saveSession}]
@@ -2004,8 +2062,15 @@ function openNewSessionModal(){
 function saveSession(){
   const date=document.getElementById('modal-date')?.value||new Date().toISOString().slice(0,10);
   const notes=document.getElementById('modal-notes')?.value?.trim()||'';
-  const tagged=Array.from(document.querySelectorAll('#modal-node-tags .tag-opt.selected')).map(el=>el.dataset.id);
-  const session={id:uid(),date,notes,taggedNodes:tagged};
+  // Get directly selected nodes
+  const directlyTagged=Array.from(document.querySelectorAll('#modal-node-tags .tag-opt.selected')).map(el=>el.dataset.id).filter(Boolean);
+  // Auto-add ancestors of each selected node
+  const allNodes=getAllNodes();
+  const tagSet=new Set(directlyTagged);
+  directlyTagged.forEach(nodeId=>{
+    getAncestors(nodeId,allNodes).forEach(aid=>tagSet.add(aid));
+  });
+  const session={id:uid(),date,notes,taggedNodes:[...tagSet]};
   appState.sessions.push(session);
   persist(); closeModal(); renderTree();
   if(currentView==='journal') renderJournal();
@@ -2039,11 +2104,7 @@ function renderSessionCard(s,allNodes){
     const n=allNodes.find(x=>x.id===id);
     return n?`<span class="session-tag">${escHtml(n.label||'?')}</span>`:'';
   }).join('');
-  const nodeTagOpts=allNodes.map(n=>{
-    const sel=s.taggedNodes.includes(n.id);
-    const sec3=getSectionForNode(n.id); const layer=sec3?sec3.label.slice(0,6):'?';
-    return `<span class="tag-opt plain-tag${sel?' selected':''}" data-id="${n.id}" onclick="this.classList.toggle('selected')">${escHtml(n.label||'Unnamed')} (${layer})</span>`;
-  }).join('');
+  const nodeTagOpts=buildNodeTagGrid(s.taggedNodes, `sc-tags-${s.id}`);
   return `<div class="session-card" id="sc-${s.id}">
     <div id="sc-read-${s.id}">
       <div style="font-size:10px;color:var(--text3);margin-bottom:4px">${s.date}</div>
@@ -2065,8 +2126,8 @@ function renderSessionCard(s,allNodes){
         <textarea class="note-box" id="sc-notes-${s.id}" style="min-height:60px">${escHtml(s.notes||'')}</textarea>
       </div>
       <div>
-        <div class="d-label" style="margin-bottom:4px">Tagged nodes</div>
-        <div style="display:flex;flex-wrap:wrap;gap:4px" id="sc-tags-${s.id}">${nodeTagOpts}</div>
+        <div class="d-label" style="margin-bottom:4px">Tagged nodes <span style="font-size:10px;opacity:.6">(leaf nodes shown — ancestors auto-tagged)</span></div>
+        ${nodeTagOpts}
       </div>
       <div style="display:flex;gap:6px">
         <button class="action-btn full" onclick="saveSessionEdit('${s.id}')">Save</button>
@@ -2100,7 +2161,11 @@ function saveSessionEdit(id){
   const tagEls=document.querySelectorAll(`#sc-tags-${id} .tag-opt.selected`);
   if(dateEl) s.date=dateEl.value||s.date;
   if(notesEl) s.notes=notesEl.value.trim();
-  s.taggedNodes=Array.from(tagEls).map(el=>el.dataset.id).filter(Boolean);
+  const directlyTagged=Array.from(tagEls).map(el=>el.dataset.id).filter(Boolean);
+  const allNodes=getAllNodes();
+  const tagSet=new Set(directlyTagged);
+  directlyTagged.forEach(nodeId=>getAncestors(nodeId,allNodes).forEach(aid=>tagSet.add(aid)));
+  s.taggedNodes=[...tagSet];
   persist(); renderJournal(); renderTree();
   showToast('Session updated');
 }
