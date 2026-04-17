@@ -748,6 +748,8 @@ function closeModal(){ document.getElementById('modal-overlay').classList.remove
 ══════════════════════════════════════════ */
 function uid(){ return 'n'+Date.now()+Math.random().toString(36).slice(2,6); }
 
+
+function isUserSection(type){ return !!(appState.sections||[]).find(s=>s.id===type); }
 function getNodes(sectionId){ const sec=(appState.sections||[]).find(s=>s.id===sectionId); return sec?sec.nodes:[]; }
 
 function sessionCountForNode(nodeId){
@@ -1685,7 +1687,7 @@ function addRootNode(layer){
 }
 
 function spawnChild(){
-  if(!selected||(selected.type!=='gameplan'&&selected.type!=='classwork')) return;
+  if(!selected||!isUserSection(selected.type)) return;
   spawnChildDirect(selected.type, selected.id);
 }
 function spawnChildDirect(layer, parentId){
@@ -1706,7 +1708,7 @@ function spawnChildDirect(layer, parentId){
 }
 
 function saveNodeEdit(){
-  if(!selected||(selected.type!=='gameplan'&&selected.type!=='classwork')) return;
+  if(!selected||!isUserSection(selected.type)) return;
   const nodes=getNodes(selected.type);
   const node=nodes.find(n=>n.id===selected.id); if(!node) return;
   node.label=document.getElementById('node-name-input').value||node.label;
@@ -1726,7 +1728,7 @@ function showToast(msg){
 }
 
 function deleteNode(){
-  if(!selected||(selected.type!=='gameplan'&&selected.type!=='classwork')) return;
+  if(!selected||!isUserSection(selected.type)) return;
   const layer=selected.type;
   const nodes=getNodes(layer);
   const node=nodes.find(n=>n.id===selected.id);
@@ -1782,7 +1784,7 @@ function renderCrossArrowList(node){
 }
 
 function addCrossArrow(){
-  if(!selected||(selected.type!=='gameplan'&&selected.type!=='classwork')) return;
+  if(!selected||!isUserSection(selected.type)) return;
   const sel=document.getElementById('conn-target-sel');
   const targetId=sel?.value;
   if(!targetId) return;
@@ -1809,7 +1811,7 @@ function removeCrossArrow(nodeId, targetId){
    NOTES (per node)
 ══════════════════════════════════════════ */
 function saveNote(){
-  if(!selected||(selected.type!=='gameplan'&&selected.type!=='classwork')) return;
+  if(!selected||!isUserSection(selected.type)) return;
   const val=document.getElementById('note-input').value.trim(); if(!val) return;
   const nodes=getNodes(selected.type);
   const node=nodes.find(n=>n.id===selected.id); if(!node) return;
