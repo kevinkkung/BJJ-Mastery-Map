@@ -286,6 +286,15 @@ input.text-input{font-size:12px;padding:5px 8px;border:0.5px solid var(--border)
         <div class="d-label" style="margin-bottom:5px">Spawn child node</div>
         <button class="action-btn full" onclick="spawnChild()">+ Add child node</button>
       </div>
+      <!-- Move node -->
+      <div id="blk-move-node" style="display:none">
+        <div class="d-label" style="margin-bottom:5px">Move node (with subtree)</div>
+        <select class="sel-input" id="move-target-sel" style="margin-bottom:6px"></select>
+        <div style="display:flex;gap:6px">
+          <button class="action-btn full" onclick="moveNodeToParent()">Move here</button>
+          <button class="action-btn full" onclick="makeNodeRoot()">Make root node</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -1582,7 +1591,7 @@ function showPCActions(){
   el.style.display='flex';
 }
 function hideUserBlocks(){
-  hide('blk-node-edit'); hide('blk-session-count'); hide('blk-notes'); hide('blk-add-conn'); hide('blk-add-child');
+  hide('blk-node-edit'); hide('blk-session-count'); hide('blk-notes'); hide('blk-add-conn'); hide('blk-add-child'); hide('blk-move-node');
 }
 
 function clickUserNode(layer, id){
@@ -1632,6 +1641,10 @@ function clickUserNode(layer, id){
   if(!_allOtherNodes.length) hide('blk-add-conn');
 
   show('blk-add-child');
+
+  // Move node panel — show valid targets (same section, not self or descendants)
+  show('blk-move-node');
+  populateMoveDropdown(node, layer);
 }
 
 /* ══════════════════════════════════════════
@@ -1752,17 +1765,19 @@ function deleteNode(){
 }
 
 function renderCrossArrowList(node){
-  const allOther=getAllNodes().filter(n=>n.id!==node.id);
-  const arrows=node.crossArrows||[];
+  // Only show nodes from the SAME section
+  const sec = getSectionForNode(node.id);
+  const sameSecNodes = sec ? (sec.nodes||[]).filter(n=>n.id!==node.id) : [];
+  const arrows = node.crossArrows||[];
 
   // Existing arrows list
-  const list=document.getElementById('cross-arrows-list');
+  const list = document.getElementById('cross-arrows-list');
   if(!arrows.length){
     list.innerHTML='<div style="font-size:12px;color:var(--text3);margin-bottom:4px">No cross-references yet.</div>';
   } else {
     list.innerHTML=arrows.map(targetId=>{
-      const target=getAllNodes().find(n=>n.id===targetId);
-      const label=target?target.label:'Unknown node';
+      const target = sameSecNodes.find(n=>n.id===targetId) || getAllNodes().find(n=>n.id===targetId);
+      const label = target?target.label:'Unknown node';
       return `<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);margin-bottom:4px;font-size:12px">
         <span style="color:var(--text2)">→ ${escHtml(label)}</span>
         <span style="cursor:pointer;color:#c0392b;font-size:11px;flex-shrink:0;margin-left:8px" onclick="removeCrossArrow('${node.id}','${targetId}')">Remove</span>
@@ -1770,16 +1785,15 @@ function renderCrossArrowList(node){
     }).join('');
   }
 
-  // Populate dropdown with nodes not already connected
-  const sel=document.getElementById('conn-target-sel');
-  const available=allOther.filter(n=>!arrows.includes(n.id));
+  // Populate dropdown with same-section nodes not already connected
+  const sel = document.getElementById('conn-target-sel');
+  const available = sameSecNodes.filter(n=>!arrows.includes(n.id));
   if(!available.length){
-    sel.innerHTML='<option disabled>All nodes already connected</option>';
+    sel.innerHTML='<option disabled>No other nodes in this section</option>';
   } else {
-    sel.innerHTML=available.map(n=>{
-      const sec2=getSectionForNode(n.id); const layer=sec2?sec2.label:'Unknown';
-      return `<option value="${n.id}">${escHtml(n.label||'Unnamed')} (${layer})</option>`;
-    }).join('');
+    sel.innerHTML=available.map(n=>
+      `<option value="${n.id}">${escHtml(n.label||'Unnamed')}</option>`
+    ).join('');
   }
 }
 
@@ -1797,6 +1811,56 @@ function addCrossArrow(){
     renderCrossArrowList(node);
     showToast('Arrow added');
   }
+}
+
+// ── Move node ──
+function getDescendants(nodeId, nodes){
+  // Returns all descendant node ids (recursive)
+  const children = nodes.filter(n=>n.parentId===nodeId).map(n=>n.id);
+  return children.reduce((acc,cid)=>[...acc,...getDescendants(cid,nodes)], children);
+}
+
+function populateMoveDropdown(node, sectionId){
+  const sel = document.getElementById('move-target-sel');
+  const nodes = getNodes(sectionId);
+  // Exclude self and all descendants (moving to a descendant would create a cycle)
+  const descendants = new Set(getDescendants(node.id, nodes));
+  const valid = nodes.filter(n => n.id !== node.id && !descendants.has(n.id));
+  if(!valid.length){
+    sel.innerHTML='<option disabled>No valid targets in this section</option>';
+  } else {
+    sel.innerHTML=valid.map(n=>
+      `<option value="${n.id}" ${n.id===node.parentId?'selected':''}>${escHtml(n.label||'Unnamed')}</option>`
+    ).join('');
+  }
+}
+
+function moveNodeToParent(){
+  if(!selected||!isUserSection(selected.type)) return;
+  const sel = document.getElementById('move-target-sel');
+  const newParentId = sel?.value;
+  if(!newParentId) return;
+  const nodes = getNodes(selected.type);
+  const node = nodes.find(n=>n.id===selected.id); if(!node) return;
+  if(newParentId === node.parentId){ showToast('Node already has this parent'); return; }
+  node.parentId = newParentId;
+  persist(); renderTree();
+  showToast('Node moved');
+}
+
+function makeNodeRoot(){
+  if(!selected||!isUserSection(selected.type)) return;
+  const nodes = getNodes(selected.type);
+  const node = nodes.find(n=>n.id===selected.id); if(!node) return;
+  if(!node.parentId){ showToast('Already a root node'); return; }
+  showModal('Make root node?',
+    `<p style="font-size:12px;color:var(--text2);line-height:1.6">"${escHtml(node.label||'This node')}" will be detached from its parent and become a new root node in this section. Its children will move with it.</p>`,
+    [{label:'Cancel',action:closeModal},{label:'Make root',action:()=>{
+      node.parentId = null;
+      persist(); renderTree(); closeModal();
+      showToast('Node is now a root');
+    }}]
+  );
 }
 
 function removeCrossArrow(nodeId, targetId){
