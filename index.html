@@ -127,47 +127,18 @@ input.text-input{font-size:12px;padding:5px 8px;border:0.5px solid var(--border)
 .session-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
 .session-tag{font-size:10px;padding:2px 6px;border-radius:4px;background:var(--bg3);color:var(--text3);border:0.5px solid var(--border)}
 
-/* ── Auth screen ── */
-#auth-screen{position:fixed;inset:0;background:var(--bg);z-index:500;display:flex;align-items:center;justify-content:center}
-#auth-box{background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:32px;width:340px;display:flex;flex-direction:column;gap:14px}
-#auth-box h2{font-size:18px;font-weight:500;text-align:center;color:var(--text)}
-#auth-box p{font-size:12px;color:var(--text3);text-align:center;line-height:1.5}
-#auth-box input{font-size:13px;padding:8px 10px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-family:var(--font);width:100%}
-#auth-box input:focus{outline:none;border-color:var(--focus-stroke)}
-.auth-btn{font-size:13px;padding:9px;border:0.5px solid var(--border2);border-radius:var(--radius);cursor:pointer;background:transparent;color:var(--text);font-family:var(--font);width:100%}
-.auth-btn:hover{background:var(--bg3)}
-.auth-btn.primary{background:var(--focus-fill);border-color:var(--focus-stroke);color:var(--focus-text)}
-.auth-btn.primary:hover{opacity:.9}
-#auth-msg{font-size:12px;text-align:center;min-height:20px;padding:4px;border-radius:var(--radius);word-break:break-word}
-#auth-msg.err{color:#c0392b}
-#auth-msg.ok{color:var(--drill-text)}
-#user-bar{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text3)}
+
 </style>
 </head>
 
 <body>
 
-<!-- Auth screen — shown until user is logged in -->
-<div id="auth-screen">
-  <div id="auth-box">
-    <h2>BJJ Mastery Tree</h2>
-    <p id="auth-subtitle">Sign in to access your map across all devices.</p>
-    <input type="email" id="auth-email" placeholder="Email address" autocomplete="email"/>
-    <input type="password" id="auth-password" placeholder="Password" autocomplete="current-password"/>
-    <div id="auth-msg"></div>
-    <button class="auth-btn primary" onclick="authSignIn()">Sign in</button>
-    <button class="auth-btn" onclick="authSignUp()">Create account</button>
-    <button class="auth-btn" id="btn-reset-pw" onclick="authResetPassword()" style="font-size:11px;border:none;color:var(--text3);padding:2px">Forgot password?</button>
-  </div>
-</div>
+
 <div id="toolbar">
   <h1>BJJ Mastery Tree</h1>
   <button class="tb-btn active" id="btn-map" onclick="showView('map')">Map</button>
   <button class="tb-btn" id="btn-journal" onclick="showView('journal')">Journal</button>
-  <div id="user-bar">
-    <span id="user-email-display"></span>
-    <button class="tb-btn" onclick="authSignOut()">Sign out</button>
-  </div>
+
 </div>
 <div id="main">
   <div id="map-panel" onclick="onMapPanelClick(event)">
@@ -320,161 +291,13 @@ input.text-input{font-size:12px;padding:5px 8px;border:0.5px solid var(--border)
   </div>
 </div>
 <script>
-// Minimal Supabase client using direct REST API + fetch — no CDN dependency
-const _sbClient = (() => {
-  const createClient = (url, key) => {
-    const headers = { 'apikey': key, 'Content-Type': 'application/json' };
-    let _session = null;
 
-    // Load persisted session from localStorage
-    try {
-      const raw = localStorage.getItem('sb-session');
-      if(raw) _session = JSON.parse(raw);
-    } catch(e) {}
-
-    const saveSession = (s) => {
-      _session = s;
-      try { localStorage.setItem('sb-session', JSON.stringify(s)); } catch(e) {}
-    };
-
-    const authHeaders = () => ({
-      ...headers,
-      'Authorization': `Bearer ${_session?.access_token || key}`
-    });
-
-    const _listeners = [];
-    const notifyListeners = (event, session) => _listeners.forEach(fn => fn(event, session));
-
-    return {
-      auth: {
-        onAuthStateChange(fn) {
-          _listeners.push(fn);
-          // Fire immediately with current state
-          setTimeout(() => fn(_session ? 'SIGNED_IN' : 'SIGNED_OUT', _session ? {user: _session.user} : null), 0);
-          return { data: { subscription: { unsubscribe: () => {} } } };
-        },
-        async getSession() {
-          if(!_session) return { data: { session: null } };
-          // Check if token is expired
-          const exp = _session.expires_at || 0;
-          if(Date.now() / 1000 > exp - 60) {
-            // Try to refresh
-            try {
-              const res = await fetch(`${url}/auth/v1/token?grant_type=refresh_token`, {
-                method: 'POST', headers,
-                body: JSON.stringify({ refresh_token: _session.refresh_token })
-              });
-              if(res.ok) {
-                const data = await res.json();
-                saveSession(data);
-                notifyListeners('TOKEN_REFRESHED', { user: data.user });
-                return { data: { session: data } };
-              } else {
-                saveSession(null);
-                return { data: { session: null } };
-              }
-            } catch(e) { return { data: { session: null } }; }
-          }
-          return { data: { session: _session } };
-        },
-        async getUser() {
-          if(!_session) return { data: { user: null } };
-          return { data: { user: _session.user } };
-        },
-        async signInWithPassword({ email, password }) {
-          try {
-            const res = await fetch(`${url}/auth/v1/token?grant_type=password`, {
-              method: 'POST', headers,
-              body: JSON.stringify({ email, password })
-            });
-            const data = await res.json();
-            if(!res.ok) return { error: { message: data.error_description || data.message || 'Sign in failed' } };
-            saveSession(data);
-            notifyListeners('SIGNED_IN', { user: data.user });
-            return { data, error: null };
-          } catch(e) { return { error: { message: e.message } }; }
-        },
-        async signUp({ email, password }) {
-          try {
-            const res = await fetch(`${url}/auth/v1/signup`, {
-              method: 'POST', headers,
-              body: JSON.stringify({ email, password })
-            });
-            const data = await res.json();
-            if(!res.ok) return { error: { message: data.error_description || data.message || 'Sign up failed' } };
-            return { data, error: null };
-          } catch(e) { return { error: { message: e.message } }; }
-        },
-        async resetPasswordForEmail(email) {
-          try {
-            const res = await fetch(`${url}/auth/v1/recover`, {
-              method: 'POST', headers,
-              body: JSON.stringify({ email })
-            });
-            if(!res.ok) { const d = await res.json(); return { error: { message: d.message } }; }
-            return { error: null };
-          } catch(e) { return { error: { message: e.message } }; }
-        },
-        async signOut() {
-          try {
-            await fetch(`${url}/auth/v1/logout`, { method: 'POST', headers: authHeaders() });
-          } catch(e) {}
-          saveSession(null);
-          notifyListeners('SIGNED_OUT', null);
-          return { error: null };
-        }
-      },
-      from(table) {
-        return {
-          select(cols='*') {
-            return {
-              eq(col, val) {
-                return {
-                  single() {
-                    return fetch(`${url}/rest/v1/${table}?select=${cols}&${col}=eq.${val}`, {
-                      headers: { ...authHeaders(), 'Accept': 'application/vnd.pgrst.object+json' }
-                    }).then(async r => {
-                      if(r.status === 406 || r.status === 404) return { data: null, error: null };
-                      const data = await r.json();
-                      if(!r.ok) return { data: null, error: data };
-                      return { data, error: null };
-                    });
-                  }
-                };
-              }
-            };
-          },
-          upsert(body, opts={}) {
-            const onConflict = opts.onConflict ? `?on_conflict=${opts.onConflict}` : '';
-            return fetch(`${url}/rest/v1/${table}${onConflict}`, {
-              method: 'POST',
-              headers: { ...authHeaders(), 'Prefer': 'resolution=merge-duplicates' },
-              body: JSON.stringify(body)
-            }).then(async r => {
-              if(!r.ok) { const d = await r.json(); return { error: d }; }
-              return { error: null };
-            });
-          }
-        };
-      }
-    };
-  };
-  return { createClient };
-})();
-
-
-/* ══════════════════════════════════════════
-   SUPABASE CONFIG
-══════════════════════════════════════════ */
-var SUPABASE_URL = 'https://xenmxovdzhptkvezwfwn.supabase.co';
-var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhlbm14b3ZkemhwdGt2ZXp3ZnduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyOTMwNDgsImV4cCI6MjA5MTg2OTA0OH0.8ZRMaCRNI9YGYEf1vC7DRmVYxo_6MpPPOUzm8dC9bhk';
-var sb = _sbClient.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 /* ══════════════════════════════════════════
    SCHEMA
 ══════════════════════════════════════════ */
 var SCHEMA_VERSION = 2;
-var LS_KEY = 'bjj_v2'; // kept as local cache key
+var LS_KEY = 'bjj_v2';
 
 /* ══════════════════════════════════════════
    FOUNDATIONAL PRINCIPLES
@@ -622,25 +445,9 @@ var currentView = 'map';
    STORAGE
 ══════════════════════════════════════════ */
 /* ══════════════════════════════════════════
-   STORAGE — Supabase + localStorage cache
+   STORAGE — localStorage
 ══════════════════════════════════════════ */
-async function loadState(){
-  // Try Supabase first (authoritative)
-  try{
-    const {data:{user}} = await sb.auth.getUser();
-    if(user){
-      const {data, error} = await sb.from('user_data').select('data').eq('user_id', user.id).single();
-      if(!error && data && data.data){
-        appState = Object.assign({}, appState, data.data);
-        // Update local cache
-        try{ localStorage.setItem(LS_KEY, JSON.stringify(appState)); }catch(e){}
-        seedDefaults();
-        updateSaveIndicator();
-        return;
-      }
-    }
-  }catch(e){}
-  // Fall back to localStorage cache (offline / first load)
+function loadState(){
   try{
     const raw = localStorage.getItem(LS_KEY);
     if(raw){ appState = Object.assign({}, appState, JSON.parse(raw)); }
@@ -670,19 +477,8 @@ function seedDefaults(){
   }
 }
 
-async function persist(){
-  // Always update local cache immediately for fast UI
+function persist(){
   try{ localStorage.setItem(LS_KEY, JSON.stringify(appState)); }catch(e){}
-  // Then push to Supabase
-  try{
-    const {data:{user}} = await sb.auth.getUser();
-    if(user){
-      await sb.from('user_data').upsert(
-        {user_id: user.id, data: appState, updated_at: new Date().toISOString()},
-        {onConflict: 'user_id'}
-      );
-    }
-  }catch(e){ console.warn('Supabase sync failed, saved locally:', e); }
   updateSaveIndicator();
 }
 function updateSaveIndicator(){
@@ -1032,7 +828,23 @@ function renderAllSections(){
     <button class="action-btn" onclick="addSection()">+ Add section</button>
   </div>`;
 
+  // Save scroll positions of existing section containers before replacing HTML
+  const _scrollPos = {};
+  sections.forEach(sec => {
+    const _el = document.getElementById('sec-' + sec.id);
+    if(_el) _scrollPos[sec.id] = _el.scrollLeft;
+  });
+  const _mapPanel = document.getElementById('map-panel');
+  const _mapScrollTop = _mapPanel ? _mapPanel.scrollTop : 0;
+
   container.innerHTML = html;
+
+  // Restore scroll positions after re-render so view doesn't reset
+  sections.forEach(sec => {
+    const _el = document.getElementById('sec-' + sec.id);
+    if(_el && _scrollPos[sec.id]) _el.scrollLeft = _scrollPos[sec.id];
+  });
+  if(_mapPanel) _mapPanel.scrollTop = _mapScrollTop;
 
   // Now render each section's SVG
   sections.forEach(sec => renderUserSection(sec));
@@ -2416,92 +2228,14 @@ function showView(v){
 /* ══════════════════════════════════════════
    AUTH
 ══════════════════════════════════════════ */
-function setAuthMsg(msg, isErr=false){
-  const el = document.getElementById('auth-msg');
-  el.textContent = msg;
-  el.className = isErr ? 'err' : 'ok';
-}
 
-async function authSignIn(){
-  const email = document.getElementById('auth-email').value.trim();
-  const password = document.getElementById('auth-password').value;
-  if(!email||!password){ setAuthMsg('Please enter email and password.', true); return; }
-  const btn = document.querySelector('.auth-btn.primary');
-  if(btn){ btn.textContent='Signing in…'; btn.disabled=true; }
-  setAuthMsg('Connecting to server…');
-  try{
-    const {data, error} = await sb.auth.signInWithPassword({email, password});
-    if(error){
-      console.error('Sign in error:', JSON.stringify(error));
-      setAuthMsg(error.message || JSON.stringify(error), true);
-    } else if(!data || !data.user){
-      setAuthMsg('No user returned — check your credentials.', true);
-    }
-    // Success: onAuthStateChange fires and hides auth screen
-  }catch(e){
-    console.error('Sign in exception:', e);
-    setAuthMsg('Error: ' + (e.message||String(e)), true);
-  } finally {
-    if(btn){ btn.textContent='Sign in'; btn.disabled=false; }
-  }
-}
-
-async function authSignUp(){
-  const email = document.getElementById('auth-email').value.trim();
-  const password = document.getElementById('auth-password').value;
-  if(!email||!password){ setAuthMsg('Please enter email and password.', true); return; }
-  if(password.length < 6){ setAuthMsg('Password must be at least 6 characters.', true); return; }
-  setAuthMsg('Creating account…');
-  const {error} = await sb.auth.signUp({email, password});
-  if(error){ setAuthMsg(error.message, true); }
-  else { setAuthMsg('Account created! Check your email to confirm, then sign in.'); }
-}
-
-async function authResetPassword(){
-  const email = document.getElementById('auth-email').value.trim();
-  if(!email){ setAuthMsg('Enter your email address above first.', true); return; }
-  setAuthMsg('Sending reset email…');
-  const {error} = await sb.auth.resetPasswordForEmail(email);
-  if(error){ setAuthMsg(error.message, true); }
-  else { setAuthMsg('Password reset email sent — check your inbox.'); }
-}
-
-async function authSignOut(){
-  await sb.auth.signOut();
-  appState = {schemaVersion:SCHEMA_VERSION, sections:[{id:'s-gp',label:'Your Gameplan',color:'#D85A30',nodes:[]},{id:'s-cw',label:'Class Work',color:'#885AB7',nodes:[]}], sessions:[], principles:[], components:[]};
-  try{ localStorage.removeItem(LS_KEY); }catch(e){}
-  document.getElementById('user-email-display').textContent = '';
-  document.getElementById('auth-screen').style.display = 'flex';
-  document.getElementById('auth-email').value = '';
-  document.getElementById('auth-password').value = '';
-  setAuthMsg('');
-}
 
 /* ══════════════════════════════════════════
    INIT
 ══════════════════════════════════════════ */
-async function init(){
-  // Seed defaults so map renders something while we check auth
-  seedDefaults();
+function init(){
+  loadState();
   renderTree();
-
-  // Listen for auth state changes
-  sb.auth.onAuthStateChange(async (event, session) => {
-    if(session && session.user){
-      document.getElementById('auth-screen').style.display = 'none';
-      document.getElementById('user-email-display').textContent = session.user.email;
-      // Reset appState before loading so we don't merge stale data
-      appState = {schemaVersion:SCHEMA_VERSION, sections:[{id:'s-gp',label:'Your Gameplan',color:'#D85A30',nodes:[]},{id:'s-cw',label:'Class Work',color:'#885AB7',nodes:[]}], sessions:[], principles:[], components:[]};
-      await loadState();
-      renderTree();
-    } else {
-      document.getElementById('auth-screen').style.display = 'flex';
-      // Reset to empty state
-      appState = {schemaVersion:SCHEMA_VERSION, sections:[{id:'s-gp',label:'Your Gameplan',color:'#D85A30',nodes:[]},{id:'s-cw',label:'Class Work',color:'#885AB7',nodes:[]}], sessions:[], principles:[], components:[]};
-      seedDefaults();
-      renderTree();
-    }
-  });
 }
 
 init();
