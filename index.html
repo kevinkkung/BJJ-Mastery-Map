@@ -804,10 +804,21 @@ function renderAllSections(){
 
   const sections = appState.sections||[];
 
-  // Build HTML for all section wrappers
-  let html = '';
-  sections.forEach((sec,idx)=>{
-    html += `<div id="sec-wrap-${sec.id}" style="margin-bottom:0">
+  // Check whether the section wrapper structure already matches the current state.
+  // If the same sections exist in the same order, skip the full HTML rebuild —
+  // just re-render the SVGs in-place. This preserves scrollLeft on each section
+  // because the wrapper divs are never destroyed and recreated.
+  // A full rebuild is only needed when sections are added, removed, or reordered.
+  const existingWrapIds = [...container.querySelectorAll('[id^="sec-wrap-"]')]
+    .map(el => el.id.replace('sec-wrap-', ''));
+  const structureUnchanged = existingWrapIds.length === sections.length &&
+    sections.every((s, i) => existingWrapIds[i] === s.id);
+
+  if (!structureUnchanged) {
+    // Full rebuild — sections were added, removed, or reordered
+    let html = '';
+    sections.forEach((sec,idx)=>{
+      html += `<div id="sec-wrap-${sec.id}" style="margin-bottom:0">
       <div id="sec-header-${sec.id}" style="display:flex;align-items:center;gap:8px;padding:6px 16px;border-top:0.5px solid var(--border);background:var(--bg);flex-wrap:wrap">
         <span style="font-size:11px;font-weight:500;color:${sec.color};letter-spacing:.06em;text-transform:uppercase;flex:1">${sec.label}</span>
         <button class="action-btn" style="font-size:11px;padding:3px 7px" onclick="editSectionName('${sec.id}')" title="Rename">✎</button>
@@ -822,31 +833,29 @@ function renderAllSections(){
         <svg id="svg-${sec.id}" style="display:block;min-width:100%"></svg>
       </div>
     </div>`;
-  });
-  // Add section button
-  html += `<div style="padding:10px 16px;border-top:0.5px solid var(--border)">
+    });
+    html += `<div style="padding:10px 16px;border-top:0.5px solid var(--border)">
     <button class="action-btn" onclick="addSection()">+ Add section</button>
   </div>`;
+    container.innerHTML = html;
+  } else {
+    // Structure unchanged — update mutable header parts in-place
+    sections.forEach((sec, idx) => {
+      const hdr = document.getElementById('sec-header-' + sec.id);
+      if (!hdr) return;
+      const span = hdr.querySelector('span');
+      if (span) { span.textContent = sec.label; span.style.color = sec.color; }
+      const picker = hdr.querySelector('input[type="color"]');
+      if (picker) { picker.value = sec.color; picker.style.background = sec.color; }
+      const btns = hdr.querySelectorAll('button.action-btn');
+      // btns order: rename(0), up(1), down(2), delete(3)
+      if (btns[1]) btns[1].disabled = (idx === 0);
+      if (btns[2]) btns[2].disabled = (idx === sections.length - 1);
+    });
+  }
 
-  // Save scroll positions of existing section containers before replacing HTML
-  const _scrollPos = {};
-  sections.forEach(sec => {
-    const _el = document.getElementById('sec-' + sec.id);
-    if(_el) _scrollPos[sec.id] = _el.scrollLeft;
-  });
-  const _mapPanel = document.getElementById('map-panel');
-  const _mapScrollTop = _mapPanel ? _mapPanel.scrollTop : 0;
-
-  container.innerHTML = html;
-
-  // Restore scroll positions after re-render so view doesn't reset
-  sections.forEach(sec => {
-    const _el = document.getElementById('sec-' + sec.id);
-    if(_el && _scrollPos[sec.id]) _el.scrollLeft = _scrollPos[sec.id];
-  });
-  if(_mapPanel) _mapPanel.scrollTop = _mapScrollTop;
-
-  // Now render each section's SVG
+  // Re-render each section's SVG (updates node highlighting, dimming, etc.)
+  // Does NOT touch the wrapper divs, so scrollLeft is preserved.
   sections.forEach(sec => renderUserSection(sec));
 }
 
